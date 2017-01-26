@@ -29,4 +29,22 @@ window.onload = () => {
     greeter.start();
 
     var canvas = new CanvasContainer(<HTMLCanvasElement>document.getElementById('canvas'))
+
+    document.addEventListener('keydown', event => {
+        if (event.keyCode == 37) {
+            //window.alert("Left Key Pressed");
+        }
+        else if (event.keyCode == 38) {
+            canvas.up();
+        }
+        else if (event.keyCode == 39) {
+            //window.alert("Right Key Pressed");
+        }
+        else if (event.keyCode == 40) {
+            canvas.down();
+        }
+        else if (event.keyCode == 32) {
+            //window.alert("Space Key Pressed");
+        }
+    });
 };

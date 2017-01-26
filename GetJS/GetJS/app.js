@@ -20,5 +20,19 @@ window.onload = function () {
     var greeter = new Greeter(el);
     greeter.start();
     var canvas = new CanvasContainer(document.getElementById('canvas'));
+    document.addEventListener('keydown', function (event) {
+        if (event.keyCode == 37) {
+        }
+        else if (event.keyCode == 38) {
+            canvas.up();
+        }
+        else if (event.keyCode == 39) {
+        }
+        else if (event.keyCode == 40) {
+            canvas.down();
+        }
+        else if (event.keyCode == 32) {
+        }
+    });
 };
 //# sourceMappingURL=app.js.map
