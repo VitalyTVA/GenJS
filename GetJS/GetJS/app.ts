@@ -1,4 +1,6 @@
-﻿class Greeter {
+﻿
+
+class Greeter {
     element: HTMLElement;
     span: HTMLElement;
     timerToken: number;
@@ -25,4 +27,6 @@ window.onload = () => {
     var el = document.getElementById('content');
     var greeter = new Greeter(el);
     greeter.start();
+
+    var canvas = new CanvasContainer(<HTMLCanvasElement>document.getElementById('canvas'))
 };
