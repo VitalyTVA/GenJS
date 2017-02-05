@@ -47,4 +47,6 @@ window.onload = () => {
             //window.alert("Space Key Pressed");
         }
     });
+    var gravity = new PhysicsType2d.Vector2(0.0, -9.78);
+    var world = new PhysicsType2d.Dynamics.World(gravity);
 };

@@ -24,11 +24,14 @@
   <ItemGroup>
     <Content Include="app.css" />
     <Content Include="index.html" />
-    <Content Include="web.config" />
+    <Content Include="web.config">
+      <SubType>Designer</SubType>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
     <TypeScriptCompile Include="Canvas.ts" />
+    <TypeScriptCompile Include="PhysicsType2d.v0_9.d.ts" />
   </ItemGroup>
   <ItemGroup>
     <None Include="web.Debug.config">
