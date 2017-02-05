@@ -19,20 +19,28 @@ window.onload = function () {
     var el = document.getElementById('content');
     var greeter = new Greeter(el);
     greeter.start();
-    var canvas = new CanvasContainer(document.getElementById('canvas'));
-    document.addEventListener('keydown', function (event) {
-        if (event.keyCode == 37) {
-        }
-        else if (event.keyCode == 38) {
-            canvas.up();
-        }
-        else if (event.keyCode == 39) {
-        }
-        else if (event.keyCode == 40) {
-            canvas.down();
-        }
-        else if (event.keyCode == 32) {
-        }
-    });
+    var boxSize = new Size(9, 13);
+    var boxBody = Body.CreateBox(boxSize, 100, new Vector(200, 200), new Vector(80, -40));
+    var canvasBox = CanvasObject.CreateBox(function () { return boxBody.position; }, boxSize);
+    var gravity = function (body) { return new Vector(0, 1 * body.mass); };
+    var physics = new Physics([boxBody], [gravity]);
+    var canvas = new CanvasContainer(document.getElementById('canvas'), [canvasBox], physics.next);
+    //document.addEventListener('keydown', event => {
+    //    if (event.keyCode == 37) {
+    //        //window.alert("Left Key Pressed");
+    //    }
+    //    else if (event.keyCode == 38) {
+    //        canvas.up();
+    //    }
+    //    else if (event.keyCode == 39) {
+    //        //window.alert("Right Key Pressed");
+    //    }
+    //    else if (event.keyCode == 40) {
+    //        canvas.down();
+    //    }
+    //    else if (event.keyCode == 32) {
+    //        //window.alert("Space Key Pressed");
+    //    }
+    //});
 };
 //# sourceMappingURL=app.js.map

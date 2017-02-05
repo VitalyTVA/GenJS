@@ -29,6 +29,7 @@
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
     <TypeScriptCompile Include="Canvas.ts" />
+    <TypeScriptCompile Include="Physics.ts" />
   </ItemGroup>
   <ItemGroup>
     <None Include="web.Debug.config">

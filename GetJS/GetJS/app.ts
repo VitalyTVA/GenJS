@@ -28,23 +28,29 @@ window.onload = () => {
     var greeter = new Greeter(el);
     greeter.start();
 
-    var canvas = new CanvasContainer(<HTMLCanvasElement>document.getElementById('canvas'))
 
-    document.addEventListener('keydown', event => {
-        if (event.keyCode == 37) {
-            //window.alert("Left Key Pressed");
-        }
-        else if (event.keyCode == 38) {
-            canvas.up();
-        }
-        else if (event.keyCode == 39) {
-            //window.alert("Right Key Pressed");
-        }
-        else if (event.keyCode == 40) {
-            canvas.down();
-        }
-        else if (event.keyCode == 32) {
-            //window.alert("Space Key Pressed");
-        }
-    });
+    let boxSize = new Size(9, 13);
+    let boxBody = Body.CreateBox(boxSize, 100, new Vector(200, 200), new Vector(80, -40));
+    let canvasBox = CanvasObject.CreateBox(() => boxBody.position, boxSize);
+    let gravity = (body: Body) => new Vector(0, 1 * body.mass);
+    let physics = new Physics([boxBody], [gravity]);
+    var canvas = new CanvasContainer(<HTMLCanvasElement>document.getElementById('canvas'), [canvasBox], physics.next);
+
+    //document.addEventListener('keydown', event => {
+    //    if (event.keyCode == 37) {
+    //        //window.alert("Left Key Pressed");
+    //    }
+    //    else if (event.keyCode == 38) {
+    //        canvas.up();
+    //    }
+    //    else if (event.keyCode == 39) {
+    //        //window.alert("Right Key Pressed");
+    //    }
+    //    else if (event.keyCode == 40) {
+    //        canvas.down();
+    //    }
+    //    else if (event.keyCode == 32) {
+    //        //window.alert("Space Key Pressed");
+    //    }
+    //});
 };
