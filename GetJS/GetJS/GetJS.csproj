@@ -24,14 +24,21 @@
   <ItemGroup>
     <Content Include="app.css" />
     <Content Include="index.html" />
+    <Content Include="Tests.html" />
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="app.ts" />
-    <TypeScriptCompile Include="Canvas.ts" />
-    <TypeScriptCompile Include="Physics.ts" />
+    <TypeScriptCompile Include="..\packages\qunit.TypeScript.DefinitelyTyped.0.3.5\Content\Scripts\typings\qunit\qunit.d.ts">
+      <Link>Scripts\typings\qunit\qunit.d.ts</Link>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="Scripts\app.ts" />
+    <TypeScriptCompile Include="Scripts\Canvas.ts" />
+    <TypeScriptCompile Include="Scripts\Tests\PhysicsTests.ts" />
+    <TypeScriptCompile Include="Scripts\Physics.ts" />
+    <TypeScriptCompile Include="Scripts\Tests\QUnitExtensions.ts" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="packages.config" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>
