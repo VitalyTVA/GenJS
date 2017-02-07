@@ -7,15 +7,6 @@
         this.y = y;
     }
 }
-class Size {
-    public readonly width: number;
-    public readonly height: number;
-
-    constructor(width: number, height: number) {
-        this.width = width;
-        this.height = height;
-    }
-}
 class Body {
     public readonly mass: number;
     public position: Vector;
@@ -25,8 +16,8 @@ class Body {
     public angle: number;
     public angularVelocity: number;
 
-    public static CreateBox(size: Size, mass: number, position: Vector, velocity: Vector, angle: number = 0, angularVelocity: number = 0): Body {
-        let momentOfInertia = mass * (size.width * size.width + size.height * size.height) / 12;
+    public static CreateBox(size: Vector, mass: number, position: Vector, velocity: Vector, angle: number = 0, angularVelocity: number = 0): Body {
+        let momentOfInertia = mass * (size.x * size.x + size.y * size.y) / 12;
         return new Body(mass, position, velocity, momentOfInertia, angle, angularVelocity);
     }
 
@@ -46,13 +37,25 @@ interface GetForceCallback {
 
 
 class Physics {
+    public static readonly CreateForceField = (acceleration: Vector) => (body: Body) => {
+        let mass = body.mass;
+        return new Vector(acceleration.x * mass, acceleration.y * mass);
+    }
+
     public readonly bodies: Array<Body>;
     public readonly forces: Array<GetForceCallback>;
     constructor(bodies: Array<Body>, forces: Array<GetForceCallback>) {
         this.bodies = bodies;
         this.forces = forces;
     }
-    public next = (timeDelta: number) => {
+    public readonly positions = () => this.bodies.map(x => x.position);
+    public readonly velocities = () => this.bodies.map((x, _) => x.velocity);
+    public readonly angles = () => this.bodies.map((x, _) => x.angle);
+    public readonly angularVelocities = () => this.bodies.map((x, _) => x.angularVelocity);
+    
+    public advance = (timeDelta: number) => {
+        if (timeDelta <= 0)
+            throw "timeDelta should be positive";
         for (let body of this.bodies) {
             let totalForceX = 0;
             let totalForceY = 0;
@@ -69,6 +72,9 @@ class Physics {
             var p = body.position;
             var v = body.velocity;
             body.position = new Vector(p.x + v.x * timeDelta, p.y + v.y * timeDelta);
+            body.angle = body.angle + body.angularVelocity * timeDelta;
+            if (Math.abs(body.angle) > Math.PI * 2)
+                body.angle = body.angle % (Math.PI * 2);
         }
     }
 }

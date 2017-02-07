@@ -19,12 +19,12 @@ window.onload = function () {
     var el = document.getElementById('content');
     var greeter = new Greeter(el);
     greeter.start();
-    var boxSize = new Size(9, 13);
-    var boxBody = Body.CreateBox(boxSize, 100, new Vector(200, 200), new Vector(80, -40));
-    var canvasBox = CanvasObject.CreateBox(function () { return boxBody.position; }, boxSize);
-    var gravity = function (body) { return new Vector(0, 1 * body.mass); };
+    var boxSize = new Vector(9, 13);
+    var boxBody = Body.CreateBox(boxSize, 100, new Vector(200, 200), new Vector(80, -40), 1, 2);
+    var canvasBox = CanvasObject.CreateBox(function () { return boxBody.position; }, boxSize, function () { return boxBody.angle; });
+    var gravity = Physics.CreateForceField(new Vector(0, 1));
     var physics = new Physics([boxBody], [gravity]);
-    var canvas = new CanvasContainer(document.getElementById('canvas'), [canvasBox], physics.next);
+    var canvas = new CanvasContainer(document.getElementById('canvas'), [canvasBox], physics.advance);
     //document.addEventListener('keydown', event => {
     //    if (event.keyCode == 37) {
     //        //window.alert("Left Key Pressed");

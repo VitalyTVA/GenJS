@@ -29,12 +29,12 @@ window.onload = () => {
     greeter.start();
 
 
-    let boxSize = new Size(9, 13);
-    let boxBody = Body.CreateBox(boxSize, 100, new Vector(200, 200), new Vector(80, -40));
-    let canvasBox = CanvasObject.CreateBox(() => boxBody.position, boxSize);
-    let gravity = (body: Body) => new Vector(0, 1 * body.mass);
+    let boxSize = new Vector(9, 13);
+    let boxBody = Body.CreateBox(boxSize, 100, new Vector(200, 200), new Vector(80, -40), 1, 2);
+    let canvasBox = CanvasObject.CreateBox(() => boxBody.position, boxSize, () => boxBody.angle);
+    let gravity = Physics.CreateForceField(new Vector(0, 1));
     let physics = new Physics([boxBody], [gravity]);
-    var canvas = new CanvasContainer(<HTMLCanvasElement>document.getElementById('canvas'), [canvasBox], physics.next);
+    var canvas = new CanvasContainer(<HTMLCanvasElement>document.getElementById('canvas'), [canvasBox], physics.advance);
 
     //document.addEventListener('keydown', event => {
     //    if (event.keyCode == 37) {

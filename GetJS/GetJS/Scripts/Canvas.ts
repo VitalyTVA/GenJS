@@ -7,11 +7,18 @@ interface AdvanceCallback {
 
 
 class CanvasObject {
-    public static CreateBox(position: () => Vector, size: Size): CanvasObject {
+    public static CreateBox(position: () => Vector, size: Vector, angle: () => number): CanvasObject {
         return new CanvasObject(context => {
+            try {
+                context.save();
                 let pos = position();
-                context.fillStyle = "black";
-                context.fillRect(pos.x - size.width / 2, pos.y - size.height / 2, size.width, size.height);
+                context.translate(pos.x, pos.y)
+                context.rotate(angle());
+                context.fillStyle = "white";
+                context.fillRect(-size.x / 2, -size.y / 2, size.x, size.y);
+            } finally {
+                context.restore();
+            }
         });
     }
     public readonly draw: DrawCallback;
@@ -32,13 +39,16 @@ class CanvasContainer {
         this.advance = advance;
 
         requestAnimationFrame(this.gameLoop);
+
+        //this.context.fillStyle = "black";
+        //this.context.fillRect(0, 0, 1280, 720);
     }
     lastTime: number = 0;
     gameLoop = (time: number) => {
         requestAnimationFrame(this.gameLoop);
-        this.context.clearRect(0, 0, 1280, 720);
+
         this.context.fillStyle = "black";
-        this.context.fillRect(time / 100, this.y, 10, 10);
+        this.context.fillRect(0, 0, 1280, 720);
 
 
         this.advance((time - this.lastTime) / 1000);

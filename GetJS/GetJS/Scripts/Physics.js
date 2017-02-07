@@ -5,13 +5,6 @@ var Vector = (function () {
     }
     return Vector;
 }());
-var Size = (function () {
-    function Size(width, height) {
-        this.width = width;
-        this.height = height;
-    }
-    return Size;
-}());
 var Body = (function () {
     function Body(mass, position, velocity, momenOfInertia, angle, angularVelocity) {
         this.mass = mass;
@@ -24,7 +17,7 @@ var Body = (function () {
     Body.CreateBox = function (size, mass, position, velocity, angle, angularVelocity) {
         if (angle === void 0) { angle = 0; }
         if (angularVelocity === void 0) { angularVelocity = 0; }
-        var momentOfInertia = mass * (size.width * size.width + size.height * size.height) / 12;
+        var momentOfInertia = mass * (size.x * size.x + size.y * size.y) / 12;
         return new Body(mass, position, velocity, momentOfInertia, angle, angularVelocity);
     };
     return Body;
@@ -32,7 +25,13 @@ var Body = (function () {
 var Physics = (function () {
     function Physics(bodies, forces) {
         var _this = this;
-        this.next = function (timeDelta) {
+        this.positions = function () { return _this.bodies.map(function (x) { return x.position; }); };
+        this.velocities = function () { return _this.bodies.map(function (x, _) { return x.velocity; }); };
+        this.angles = function () { return _this.bodies.map(function (x, _) { return x.angle; }); };
+        this.angularVelocities = function () { return _this.bodies.map(function (x, _) { return x.angularVelocity; }); };
+        this.advance = function (timeDelta) {
+            if (timeDelta <= 0)
+                throw "timeDelta should be positive";
             for (var _i = 0, _a = _this.bodies; _i < _a.length; _i++) {
                 var body_1 = _a[_i];
                 var totalForceX = 0;
@@ -51,11 +50,18 @@ var Physics = (function () {
                 var p = body.position;
                 var v = body.velocity;
                 body.position = new Vector(p.x + v.x * timeDelta, p.y + v.y * timeDelta);
+                body.angle = body.angle + body.angularVelocity * timeDelta;
+                if (Math.abs(body.angle) > Math.PI * 2)
+                    body.angle = body.angle % (Math.PI * 2);
             }
         };
         this.bodies = bodies;
         this.forces = forces;
     }
+    Physics.CreateForceField = function (acceleration) { return function (body) {
+        var mass = body.mass;
+        return new Vector(acceleration.x * mass, acceleration.y * mass);
+    }; };
     return Physics;
 }());
 //# sourceMappingURL=Physics.js.map

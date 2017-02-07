@@ -2,11 +2,19 @@ var CanvasObject = (function () {
     function CanvasObject(draw) {
         this.draw = draw;
     }
-    CanvasObject.CreateBox = function (position, size) {
+    CanvasObject.CreateBox = function (position, size, angle) {
         return new CanvasObject(function (context) {
-            var pos = position();
-            context.fillStyle = "black";
-            context.fillRect(pos.x - size.width / 2, pos.y - size.height / 2, size.width, size.height);
+            try {
+                context.save();
+                var pos = position();
+                context.translate(pos.x, pos.y);
+                context.rotate(angle());
+                context.fillStyle = "white";
+                context.fillRect(-size.x / 2, -size.y / 2, size.x, size.y);
+            }
+            finally {
+                context.restore();
+            }
         });
     };
     return CanvasObject;
@@ -18,9 +26,8 @@ var CanvasContainer = (function () {
         this.lastTime = 0;
         this.gameLoop = function (time) {
             requestAnimationFrame(_this.gameLoop);
-            _this.context.clearRect(0, 0, 1280, 720);
             _this.context.fillStyle = "black";
-            _this.context.fillRect(time / 100, _this.y, 10, 10);
+            _this.context.fillRect(0, 0, 1280, 720);
             _this.advance((time - _this.lastTime) / 1000);
             for (var _i = 0, _a = _this.objects; _i < _a.length; _i++) {
                 var obj = _a[_i];
@@ -32,6 +39,8 @@ var CanvasContainer = (function () {
         this.objects = objects;
         this.advance = advance;
         requestAnimationFrame(this.gameLoop);
+        //this.context.fillStyle = "black";
+        //this.context.fillRect(0, 0, 1280, 720);
     }
     CanvasContainer.prototype.up = function () {
         this.y--;
