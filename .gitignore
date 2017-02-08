@@ -38,6 +38,8 @@ node_modules
 .node_repl_history
 
 typings/
+getjs/getjs/scripts/*.js
+getjs/getjs/tests/*.js
 lib/*.js
 test/*.js
 *.map

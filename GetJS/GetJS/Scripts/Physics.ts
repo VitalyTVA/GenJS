@@ -1,12 +1,73 @@
-﻿class Vector {
-    public readonly x: number;
-    public readonly y: number;
+﻿var EPSILON = 0.000001;
+
+class Vector {
+    readonly x: number;
+    readonly y: number;
 
     constructor(x: number, y: number) {
         this.x = x;
         this.y = y;
     }
+    vectorTo(point: Vector): Vector {
+        return new Vector(point.x - this.x, point.y - this.y);
+    }
+    scalarProduct(v: Vector): number {
+        return v.x * this.x + v.y  * this.y;
+    }
+    lengthSquare(): number {
+        return this.x * this.x + this.y * this.y;
+    }
+    length(): number {
+        return Math.sqrt(this.lengthSquare());
+    }
+    normalize(): Vector {
+        let len = this.length();
+        return new Vector(this.x / len, this.y / len);
+    }
+    mult(scalar: number): Vector {
+        return new Vector(this.x * scalar, this.y  * scalar);
+    }
+    subtract(v: Vector): Vector {
+        return new Vector(this.x - v.x, this.y - v.y);
+    }
+    add(v: Vector): Vector {
+        return new Vector(this.x + v.x, this.y  + v.y);
+    }
+    toString(): string {
+        return "(" + this.x + ", " + this.y + ")";
+    }
+    equals(vector: Vector, threshold = EPSILON): boolean {
+        if (Math.abs(this.x - vector.x) > threshold)
+            return false;
+
+        if (Math.abs(this.y - vector.y) > threshold)
+            return false;
+
+        return true;
+    }
 }
+class AppliedForce {
+    public readonly force: Vector;
+    public readonly point: Vector;
+
+    constructor(force: Vector, point: Vector) {
+        this.force = force;
+        this.point = point;
+    }
+    public drag(position: Vector): Vector{
+        if (position.equals(this.point))
+            return this.force;
+        let centerVector = position.vectorTo(this.point);
+        let centerVectorSquareLength = centerVector.lengthSquare();
+
+        let dragLength = centerVector.scalarProduct(this.force) / Math.sqrt(centerVectorSquareLength);
+        //let torqueLength = Math.sqrt(this.force.lengthSquare() - dragLength * dragLength); 
+
+        let drag = centerVector.normalize().mult(dragLength);
+        return drag;
+    }
+}
+
 class Body {
     public readonly mass: number;
     public position: Vector;
@@ -32,14 +93,14 @@ class Body {
 }
 
 interface GetForceCallback {
-    (body: Body): Vector;
+    (body: Body): AppliedForce;
 }
 
 
 class Physics {
     public static readonly CreateForceField = (acceleration: Vector) => (body: Body) => {
         let mass = body.mass;
-        return new Vector(acceleration.x * mass, acceleration.y * mass);
+        return new AppliedForce(new Vector(acceleration.x * mass, acceleration.y * mass), body.position);
     }
 
     public readonly bodies: Array<Body>;
@@ -59,13 +120,22 @@ class Physics {
         for (let body of this.bodies) {
             let totalForceX = 0;
             let totalForceY = 0;
+            let totalTorque = 0;
             for (let force of this.forces) {
                 let forceValue = force(body);
-                totalForceX += forceValue.x;
-                totalForceY += forceValue.y;
+
+                let drag = forceValue.drag(body.position);
+                //let drag = forceValue.force;
+
+                let r = body.position.vectorTo(forceValue.point);
+                let torque = r.x * forceValue.force.y - r.y * forceValue.force.x;
+                totalForceX += drag.x;
+                totalForceY += drag.y;
+                totalTorque += torque;
             }
             var v = body.velocity;
-            body.velocity = new Vector(v.x + totalForceX / body.mass, v.y + totalForceY / body.mass);
+            body.velocity = new Vector(v.x + timeDelta * totalForceX / body.mass, v.y + timeDelta * totalForceY / body.mass);
+            body.angularVelocity = body.angularVelocity + timeDelta * totalTorque / body.momenOfInertia;
         }
 
         for (var body of this.bodies) {

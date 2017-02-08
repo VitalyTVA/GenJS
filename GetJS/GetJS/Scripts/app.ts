@@ -32,7 +32,7 @@ window.onload = () => {
     let boxSize = new Vector(9, 13);
     let boxBody = Body.CreateBox(boxSize, 100, new Vector(200, 200), new Vector(80, -40), 1, 2);
     let canvasBox = CanvasObject.CreateBox(() => boxBody.position, boxSize, () => boxBody.angle);
-    let gravity = Physics.CreateForceField(new Vector(0, 1));
+    let gravity = Physics.CreateForceField(new Vector(0, 20));
     let physics = new Physics([boxBody], [gravity]);
     var canvas = new CanvasContainer(<HTMLCanvasElement>document.getElementById('canvas'), [canvasBox], physics.advance);
 
