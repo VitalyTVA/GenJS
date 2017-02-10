@@ -1,4 +1,4 @@
-﻿var EPSILON = 0.000001;
+var EPSILON = 0.000001;
 
 class Vector {
     readonly x: number;
@@ -8,20 +8,23 @@ class Vector {
         this.x = x;
         this.y = y;
     }
+    distance(b: Vector) {
+        return this.subtract(b).length;
+    }
     vectorTo(point: Vector): Vector {
         return new Vector(point.x - this.x, point.y - this.y);
     }
     scalarProduct(v: Vector): number {
         return v.x * this.x + v.y  * this.y;
     }
-    lengthSquare(): number {
+    get squareLength(): number {
         return this.x * this.x + this.y * this.y;
     }
-    length(): number {
-        return Math.sqrt(this.lengthSquare());
+    get length(): number {
+        return Math.sqrt(this.squareLength);
     }
     normalize(): Vector {
-        let len = this.length();
+        let len = this.length;
         return new Vector(this.x / len, this.y / len);
     }
     mult(scalar: number): Vector {
@@ -45,6 +48,14 @@ class Vector {
 
         return true;
     }
+    rotate(angle: number): Vector {
+        let s = Math.sin(angle);
+        let c = Math.cos(angle);
+        return new Vector(this.x * c - this.y * s, this.x * s + this.y * c);
+    }
+    setLength(length: number): Vector {
+        return this.normalize().mult(length);
+    }
 }
 class AppliedForce {
     public readonly force: Vector;
@@ -58,12 +69,12 @@ class AppliedForce {
         if (position.equals(this.point))
             return this.force;
         let centerVector = position.vectorTo(this.point);
-        let centerVectorSquareLength = centerVector.lengthSquare();
+        let centerVectorSquareLength = centerVector.squareLength;
 
         let dragLength = centerVector.scalarProduct(this.force) / Math.sqrt(centerVectorSquareLength);
         //let torqueLength = Math.sqrt(this.force.lengthSquare() - dragLength * dragLength); 
 
-        let drag = centerVector.normalize().mult(dragLength);
+        let drag = centerVector.setLength(dragLength);
         return drag;
     }
 }
@@ -77,7 +88,7 @@ class Body {
     public angle: number;
     public angularVelocity: number;
 
-    public static CreateBox(size: Vector, mass: number, position: Vector, velocity: Vector, angle: number = 0, angularVelocity: number = 0): Body {
+    public static createBox(size: Vector, mass: number, position: Vector, velocity: Vector, angle: number = 0, angularVelocity: number = 0): Body {
         let momentOfInertia = mass * (size.x * size.x + size.y * size.y) / 12;
         return new Body(mass, position, velocity, momentOfInertia, angle, angularVelocity);
     }
@@ -102,6 +113,17 @@ class Physics {
         let mass = body.mass;
         return new AppliedForce(new Vector(acceleration.x * mass, acceleration.y * mass), body.position);
     }
+    public static readonly CreateSpring = (rate: number, fixedPoint: Vector, body: Body, bodyPoint: Vector) => (x: Body) => {
+        if (!(body === x))
+            return null;
+        let rotatedBodyPoint = bodyPoint.rotate(body.angle);
+        let actualBodyPoint = body.position.add(rotatedBodyPoint);
+
+        let vectorToFixedPoint = fixedPoint.subtract(actualBodyPoint);
+        let forceValue = rate * vectorToFixedPoint.length;
+        let force = vectorToFixedPoint.setLength(forceValue);
+        return new AppliedForce(force, actualBodyPoint);
+    }
 
     public readonly bodies: Array<Body>;
     public readonly forces: Array<GetForceCallback>;
@@ -123,6 +145,8 @@ class Physics {
             let totalTorque = 0;
             for (let force of this.forces) {
                 let forceValue = force(body);
+                if (forceValue == null)
+                    continue;
 
                 let drag = forceValue.drag(body.position);
                 //let drag = forceValue.force;

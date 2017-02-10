@@ -1,4 +1,4 @@
-﻿interface DrawCallback {
+interface DrawCallback {
     (context: CanvasRenderingContext2D): void;
 }
 interface AdvanceCallback {
@@ -6,34 +6,47 @@ interface AdvanceCallback {
 }
 
 
-class CanvasObject {
-    public static CreateBox(position: () => Vector, size: Vector, angle: () => number): CanvasObject {
-        return new CanvasObject(context => {
+class View {
+    public static createBox(position: () => Vector, size: Vector, angle: () => number): View {
+        return new View(context => {
+            let pos = position();
+            context.translate(pos.x, pos.y)
+            context.rotate(angle());
+            context.fillStyle = "white";
+            context.fillRect(-size.x / 2, -size.y / 2, size.x, size.y);
+        });
+    }
+    public static CreateSpring(from: () => Vector, to: () => Vector): View {
+        return new View(context => {
+            context.strokeStyle = "green";
+            context.beginPath();
+            let f = from();
+            let t = to();
+            context.moveTo(f.x, f.y);
+            context.lineTo(t.x, t.y);
+            context.stroke();
+        });
+    }
+    readonly draw: DrawCallback;
+    private constructor(draw: DrawCallback) {
+        this.draw = context => {
             try {
                 context.save();
-                let pos = position();
-                context.translate(pos.x, pos.y)
-                context.rotate(angle());
-                context.fillStyle = "white";
-                context.fillRect(-size.x / 2, -size.y / 2, size.x, size.y);
+                draw(context);
             } finally {
                 context.restore();
             }
-        });
-    }
-    public readonly draw: DrawCallback;
-    private constructor(draw: DrawCallback) {
-        this.draw = draw;
+        };
     }
 }
 
 class CanvasContainer {
     context: CanvasRenderingContext2D;
-    objects: CanvasObject[];
+    objects: View[];
     y: number = 0;
     advance: AdvanceCallback;
 
-    constructor(canvas: HTMLCanvasElement, objects: CanvasObject[], advance: AdvanceCallback) {
+    constructor(canvas: HTMLCanvasElement, objects: View[], advance: AdvanceCallback) {
         this.context = canvas.getContext("2d");
         this.objects = objects;
         this.advance = advance;
