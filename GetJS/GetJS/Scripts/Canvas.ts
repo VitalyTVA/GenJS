@@ -16,7 +16,7 @@ class View {
             context.fillRect(-size.x / 2, -size.y / 2, size.x, size.y);
         });
     }
-    public static CreateSpring(from: () => Vector, to: () => Vector): View {
+    public static createSpring(from: () => Vector, to: () => Vector): View {
         return new View(context => {
             context.strokeStyle = "green";
             context.beginPath();

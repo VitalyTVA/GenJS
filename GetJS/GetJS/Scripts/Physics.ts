@@ -27,6 +27,9 @@ class Vector {
         let len = this.length;
         return new Vector(this.x / len, this.y / len);
     }
+    negate(): Vector {
+        return new Vector(-this.x, -this.y);
+    }
     mult(scalar: number): Vector {
         return new Vector(this.x * scalar, this.y  * scalar);
     }
@@ -72,7 +75,6 @@ class AppliedForce {
         let centerVectorSquareLength = centerVector.squareLength;
 
         let dragLength = centerVector.scalarProduct(this.force) / Math.sqrt(centerVectorSquareLength);
-        //let torqueLength = Math.sqrt(this.force.lengthSquare() - dragLength * dragLength); 
 
         let drag = centerVector.setLength(dragLength);
         return drag;
@@ -80,15 +82,15 @@ class AppliedForce {
 }
 
 class Body {
-    public readonly mass: number;
-    public position: Vector;
-    public velocity: Vector;
+    readonly mass: number;
+    position: Vector;
+    velocity: Vector;
 
-    public readonly momenOfInertia: number;
-    public angle: number;
-    public angularVelocity: number;
+    readonly momenOfInertia: number;
+    angle: number;
+    angularVelocity: number;
 
-    public static createBox(size: Vector, mass: number, position: Vector, velocity: Vector, angle: number = 0, angularVelocity: number = 0): Body {
+    static createBox(size: Vector, mass: number, position: Vector, velocity: Vector, angle: number = 0, angularVelocity: number = 0): Body {
         let momentOfInertia = mass * (size.x * size.x + size.y * size.y) / 12;
         return new Body(mass, position, velocity, momentOfInertia, angle, angularVelocity);
     }
@@ -100,34 +102,73 @@ class Body {
         this.momenOfInertia = momenOfInertia;
         this.angle = angle;
         this.angularVelocity = angularVelocity;
+    
+    }
+    toWorldPoint(bodyPoint: Vector) {
+        const rotatedBodyPoint = bodyPoint.rotate(this.angle);
+        return this.position.add(rotatedBodyPoint);
     }
 }
 
-interface GetForceCallback {
+interface ForceProvider {
     (body: Body): AppliedForce;
 }
-
+interface Spring extends ForceProvider {
+    //TODO test methods
+    from: () => Vector; //TODO how to make it readonly
+    to: () => Vector;
+}
 
 class Physics {
-    public static readonly CreateForceField = (acceleration: Vector) => (body: Body) => {
-        let mass = body.mass;
-        return new AppliedForce(new Vector(acceleration.x * mass, acceleration.y * mass), body.position);
+    static createForceField(acceleration: Vector) {
+        return (body: Body) => {
+            let mass = body.mass;
+            return new AppliedForce(
+                new Vector(acceleration.x * mass, acceleration.y * mass), body.position);
+        };
     }
-    public static readonly CreateSpring = (rate: number, fixedPoint: Vector, body: Body, bodyPoint: Vector) => (x: Body) => {
-        if (!(body === x))
-            return null;
-        let rotatedBodyPoint = bodyPoint.rotate(body.angle);
-        let actualBodyPoint = body.position.add(rotatedBodyPoint);
+    static createFixedSpring(rate: number, fixedPoint: Vector, body: Body, bodyPoint: Vector) {
+        let actualBodyPoint = () => body.toWorldPoint(bodyPoint);
+        let spring = <Spring>function (x: Body) {
+            if (body !== x)
+                return null;
+            let to = actualBodyPoint();
 
-        let vectorToFixedPoint = fixedPoint.subtract(actualBodyPoint);
-        let forceValue = rate * vectorToFixedPoint.length;
-        let force = vectorToFixedPoint.setLength(forceValue);
-        return new AppliedForce(force, actualBodyPoint);
+            let vectorToFixedPoint = fixedPoint.subtract(to);
+            let force = vectorToFixedPoint.mult(rate);
+            return new AppliedForce(force, to);
+        }
+        spring.from = () => fixedPoint;
+        spring.to = actualBodyPoint;
+        return spring;
     }
+    static createDynamicSpring(rate: number, fromBody: Body, fromBodyPoint: Vector, toBody: Body, toBodyPoint: Vector) {
+        let fromBodyWorldPoint = () => fromBody.toWorldPoint(fromBodyPoint);
+        let toBodyWorldPoint = () => toBody.toWorldPoint(toBodyPoint);
+        let spring = <Spring>function (x: Body) {
+            if (fromBody !== x && toBody !== x)
+                return null;
+            let from = fromBodyWorldPoint();
+            let to = toBodyWorldPoint();
+
+            let vectorBetween = to.subtract(from);
+            let force = vectorBetween.mult(rate);
+            if (toBody === x) {
+                force = force.negate();
+                from = to;
+            }
+            //TODO duplicated code
+            return new AppliedForce(force, from);
+        }
+        spring.from = fromBodyWorldPoint;
+        spring.to = toBodyWorldPoint;
+        return spring;
+    }
+
 
     public readonly bodies: Array<Body>;
-    public readonly forces: Array<GetForceCallback>;
-    constructor(bodies: Array<Body>, forces: Array<GetForceCallback>) {
+    public readonly forces: Array<ForceProvider>;
+    constructor(bodies: Array<Body>, forces: Array<ForceProvider>) {
         this.bodies = bodies;
         this.forces = forces;
     }
@@ -135,8 +176,14 @@ class Physics {
     public readonly velocities = () => this.bodies.map((x, _) => x.velocity);
     public readonly angles = () => this.bodies.map((x, _) => x.angle);
     public readonly angularVelocities = () => this.bodies.map((x, _) => x.angularVelocity);
-    
-    public advance = (timeDelta: number) => {
+
+    advance (timeDelta: number) {
+        const steps = 1;
+        for (let i = 0; i < steps; i++) {
+            this.advanceCore(timeDelta / steps);
+        }
+    }
+    private advanceCore (timeDelta: number) {
         if (timeDelta <= 0)
             throw "timeDelta should be positive";
         for (let body of this.bodies) {
