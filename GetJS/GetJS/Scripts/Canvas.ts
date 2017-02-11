@@ -40,41 +40,63 @@ class View {
     }
 }
 
-class CanvasContainer {
-    context: CanvasRenderingContext2D;
-    objects: View[];
-    y: number = 0;
-    advance: AdvanceCallback;
+class Simulation {
+    static createSimulation(canvas: HTMLCanvasElement, objects: View[], advance: AdvanceCallback) {
+        const context = canvas.getContext("2d");
+        let lastTime = 0;
+        let elapsedTime = 0;
+        let simulationTime = 0;
+        const step = 1 / 60;;
+        let pause = false;
+        let oneFrame = false;
 
-    constructor(canvas: HTMLCanvasElement, objects: View[], advance: AdvanceCallback) {
-        this.context = canvas.getContext("2d");
-        this.objects = objects;
-        this.advance = advance;
+        const draw = () => objects.forEach(x => x.draw(context));
+        const clear = () => {
+            context.fillStyle = "black";
+            context.fillRect(0, 0, 1280, 720);
+        };
 
-        requestAnimationFrame(this.gameLoop);
+        let gameLoop = (time: number) => {
+            requestAnimationFrame(gameLoop);
 
-        //this.context.fillStyle = "black";
-        //this.context.fillRect(0, 0, 1280, 720);
-    }
-    lastTime: number = 0;
-    gameLoop = (time: number) => {
-        requestAnimationFrame(this.gameLoop);
+            if (!pause) {
+                clear();
+                let dt = (time - lastTime) / 1000;
+                elapsedTime += dt;
+                while (simulationTime < elapsedTime) {
+                    advance(step);
+                    simulationTime += step;
+                }
+                draw();
+                
+            } else if (oneFrame) {
+                //TODO duplicate code
+                clear();
+                advance(step);
+                draw();
+                oneFrame = false;
+            }
 
-        this.context.fillStyle = "black";
-        this.context.fillRect(0, 0, 1280, 720);
+            lastTime = time;
+        };
 
 
-        this.advance((time - this.lastTime) / 1000);
-        for (var obj of this.objects) {
-            obj.draw(this.context);
-        }
+        requestAnimationFrame(gameLoop);
 
-        this.lastTime = time;
-    };
-    public up(): void {
-        this.y--;
-    }
-    public down(): void {
-        this.y++;
+        return {
+            pause: () => {
+                pause = true;
+            },
+            resume: () => {
+                pause = false;
+            },
+            step: () => {
+                if (pause)
+                    oneFrame = true;
+            },
+        };
+
+        //context.fillStyle = "black";
+        //context.fillRect(0, 0, 1280, 720);
     }
 }

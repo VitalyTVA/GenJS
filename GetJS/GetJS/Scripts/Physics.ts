@@ -61,14 +61,14 @@ class Vector {
     }
 }
 class AppliedForce {
-    public readonly force: Vector;
-    public readonly point: Vector;
+    readonly force: Vector;
+    readonly point: Vector;
 
     constructor(force: Vector, point: Vector) {
         this.force = force;
         this.point = point;
     }
-    public drag(position: Vector): Vector{
+    drag(position: Vector): Vector{
         if (position.equals(this.point))
             return this.force;
         let centerVector = position.vectorTo(this.point);
@@ -111,58 +111,76 @@ class Body {
 }
 
 interface ForceProvider {
-    (body: Body): AppliedForce;
+    getForce(body: Body): AppliedForce;
+    energy?(body: Body): number;
 }
 interface Spring extends ForceProvider {
     //TODO test methods
-    from: () => Vector; //TODO how to make it readonly
-    to: () => Vector;
+    from(): Vector;
+    to(): Vector;
 }
 
 class Physics {
-    static createForceField(acceleration: Vector) {
-        return (body: Body) => {
-            let mass = body.mass;
-            return new AppliedForce(
-                new Vector(acceleration.x * mass, acceleration.y * mass), body.position);
+    static createForceField(acceleration: Vector): ForceProvider {
+        return {
+            getForce: body => {
+                let mass = body.mass;
+                return new AppliedForce(
+                    new Vector(acceleration.x * mass, acceleration.y * mass), body.position);
+            },
+            energy: body => {
+                if (acceleration.x != 0)
+                    throw "todo";
+                return acceleration.y * body.mass * body.position.y; 
+            },
         };
     }
-    static createFixedSpring(rate: number, fixedPoint: Vector, body: Body, bodyPoint: Vector) {
+    static createFixedSpring(rate: number, fixedPoint: Vector, body: Body, bodyPoint: Vector): Spring {
         let actualBodyPoint = () => body.toWorldPoint(bodyPoint);
-        let spring = <Spring>function (x: Body) {
-            if (body !== x)
-                return null;
-            let to = actualBodyPoint();
+        return {
+            getForce: x => {
+                if (body !== x)
+                    return null;
+                let to = actualBodyPoint();
 
-            let vectorToFixedPoint = fixedPoint.subtract(to);
-            let force = vectorToFixedPoint.mult(rate);
-            return new AppliedForce(force, to);
-        }
-        spring.from = () => fixedPoint;
-        spring.to = actualBodyPoint;
-        return spring;
+                let vectorToFixedPoint = fixedPoint.subtract(to);
+                let force = vectorToFixedPoint.mult(rate);
+                return new AppliedForce(force, to);
+            },
+            energy: x => {
+                if (body !== x)
+                    return 0;
+                return actualBodyPoint().subtract(fixedPoint).squareLength * rate / 2;
+            },
+            from: () => fixedPoint,
+            to: actualBodyPoint,
+        };
     }
-    static createDynamicSpring(rate: number, fromBody: Body, fromBodyPoint: Vector, toBody: Body, toBodyPoint: Vector) {
+    static createDynamicSpring(rate: number, fromBody: Body, fromBodyPoint: Vector, toBody: Body, toBodyPoint: Vector): Spring {
         let fromBodyWorldPoint = () => fromBody.toWorldPoint(fromBodyPoint);
         let toBodyWorldPoint = () => toBody.toWorldPoint(toBodyPoint);
-        let spring = <Spring>function (x: Body) {
-            if (fromBody !== x && toBody !== x)
-                return null;
-            let from = fromBodyWorldPoint();
-            let to = toBodyWorldPoint();
+        return {
+            getForce: x => {
+                if (fromBody !== x && toBody !== x)
+                    return null;
+                let from = fromBodyWorldPoint();
+                let to = toBodyWorldPoint();
 
-            let vectorBetween = to.subtract(from);
-            let force = vectorBetween.mult(rate);
-            if (toBody === x) {
-                force = force.negate();
-                from = to;
-            }
-            //TODO duplicated code
-            return new AppliedForce(force, from);
+                let vectorBetween = to.subtract(from);
+                let force = vectorBetween.mult(rate);
+                if (toBody === x) {
+                    force = force.negate();
+                    from = to;
+                }
+                //TODO duplicated code
+                return new AppliedForce(force, from);
+            },
+            energy: x => {
+                throw "todo";
+            },
+            from: fromBodyWorldPoint,
+            to: toBodyWorldPoint,
         }
-        spring.from = fromBodyWorldPoint;
-        spring.to = toBodyWorldPoint;
-        return spring;
     }
 
 
@@ -191,7 +209,7 @@ class Physics {
             let totalForceY = 0;
             let totalTorque = 0;
             for (let force of this.forces) {
-                let forceValue = force(body);
+                let forceValue = force.getForce(body);
                 if (forceValue == null)
                     continue;
 

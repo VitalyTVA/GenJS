@@ -56,7 +56,7 @@ QUnit.test("ForceFieldMotion", assert => {
         ],
         [
             Physics.createForceField(new Vector(2, 3)),
-            body => null,
+            { getForce: (body => null) },
             Physics.createForceField(new Vector(-4, 2)),
         ]
     );
@@ -89,6 +89,12 @@ QUnit.test("ForceFieldMotion", assert => {
     );
 });
 
+QUnit.test("ForceFieldEnergy", assert => {
+    const field = Physics.createForceField(new Vector(0, 3));
+    assert.equal(60000, field.energy(Body.createBox(new Vector(10, 10), 100, new Vector(200, 200), new Vector(10, 20))));
+    assert.equal(10500, field.energy(Body.createBox(new Vector(20, 20), 50, new Vector(100, 70), new Vector(50, 100))));
+});
+
 QUnit.test("InvalidAdvanceTimeValue", assert => {
     let physics = new Physics([],[]);
 
@@ -116,8 +122,8 @@ QUnit.test("DragAndTorqueMotion", assert => {
     let physics = new Physics(
         [body],
         [
-            body => new AppliedForce(new Vector(1, 2), body.position.add(new Vector(2, 3))),
-            body => new AppliedForce(new Vector(-1, 1), body.position.add(new Vector(2, 2))),
+            { getForce: body => new AppliedForce(new Vector(1, 2), body.position.add(new Vector(2, 3))) },
+            { getForce: body => new AppliedForce(new Vector(-1, 1), body.position.add(new Vector(2, 2))) },
         ]
     );
 
@@ -132,15 +138,20 @@ QUnit.test("FixedPointSpring", assert => {
     let body = Body.createBox(new Vector(10, 10), 2, new Vector(21, 13), new Vector(10, 20));
     let spring = Physics.createFixedSpring(15, new Vector(9, 13), body, new Vector(2, 3));
 
-    assert.equal(null, spring(Body.createBox(new Vector(10, 10), 2, new Vector(200, 100), new Vector(0, 0))));
-    let appliedForce = spring(body);
+    let someBody = Body.createBox(new Vector(10, 10), 2, new Vector(200, 100), new Vector(0, 0));
+    assert.equal(null, spring.getForce(someBody));
+    assert.equal(0, spring.energy(someBody));
+
+    let appliedForce = spring.getForce(body);
     assert.vectorEqual(appliedForce.force, new Vector(-210, -45));
     assert.vectorEqual(appliedForce.point, new Vector(23, 16));
+    assert.equal(1537.5, spring.energy(body));
 
     body.angle = 2.2;
-    appliedForce = spring(body);
+    appliedForce = spring.getForce(body);
     assert.vectorEqual(appliedForce.force, new Vector(-125.9626283, 2.227658));
     assert.vectorEqual(appliedForce.point, new Vector(17.39750855, 12.851489455));
+    assert.equal(529.0515397254967, spring.energy(body));
 });
 
 QUnit.test("DynamicSpring", assert => {
@@ -148,22 +159,22 @@ QUnit.test("DynamicSpring", assert => {
     let body2 = Body.createBox(new Vector(15, 25), 3, new Vector(57, 25), new Vector(30, 40));
     let spring = Physics.createDynamicSpring(15, body1, new Vector(9, 13), body2, new Vector(2, 3));
 
-    assert.equal(null, spring(Body.createBox(new Vector(10, 10), 2, new Vector(200, 100), new Vector(0, 0))));
+    assert.equal(null, spring.getForce(Body.createBox(new Vector(10, 10), 2, new Vector(200, 100), new Vector(0, 0))));
 
-    let appliedForceBody1 = spring(body1);
+    let appliedForceBody1 = spring.getForce(body1);
     assert.vectorEqual(appliedForceBody1.force, new Vector(435, 30));
     assert.vectorEqual(appliedForceBody1.point, new Vector(30, 26));
-    let appliedForceBody2 = spring(body2);
+    let appliedForceBody2 = spring.getForce(body2);
     assert.vectorEqual(appliedForceBody2.force, new Vector(-435, -30));
     assert.vectorEqual(appliedForceBody2.point, new Vector(59, 28));
 
 
     body1.angle = 2.2;
     body2.angle = -3.5;
-    appliedForceBody1 = spring(body1);
+    appliedForceBody1 = spring.getForce(body1);
     assert.vectorEqual(appliedForceBody1.force, new Vector(733.2255037095349, 153.99364925175052));
     assert.vectorEqual(appliedForceBody1.point, new Vector(5.193036695047217, 12.625953110056816));
-    appliedForceBody2 = spring(body2);
+    appliedForceBody2 = spring.getForce(body2);
     assert.vectorEqual(appliedForceBody2.force, new Vector(-733.2255037095349, -153.99364925175052));
     assert.vectorEqual(appliedForceBody2.point, new Vector(54.074736942349546, 22.89219639350685));
 });

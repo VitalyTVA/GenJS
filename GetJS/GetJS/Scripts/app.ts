@@ -30,7 +30,7 @@ class ModelFactory {
         return new Model(body, view);
     }
     static createSpringModel(spring: Spring) {
-        let view = View.createSpring(spring.from, spring.to);
+        let view = View.createSpring(spring.from, spring.to); //TODO simplify
         return new Model(spring, view);
     }
 }
@@ -79,7 +79,7 @@ window.onload = () => {
             springModel3.value,
             springModel3_.value
         ]);
-    var canvas = new CanvasContainer(<HTMLCanvasElement>document.getElementById('canvas'),
+    var simulation = Simulation.createSimulation(<HTMLCanvasElement>document.getElementById('canvas'),
         [
             model1.view,
             model2.view,
@@ -90,6 +90,15 @@ window.onload = () => {
             springModel3_.view
         ], dt => physics.advance(dt));
 
+    document.getElementById("pauseButton").addEventListener("click", event => {
+        simulation.pause();
+    });
+    document.getElementById("resumeButton").addEventListener("click", event => {
+        simulation.resume();
+    });
+    document.getElementById("stepButton").addEventListener("click", event => {
+        simulation.step();
+    });
     //document.addEventListener('keydown', event => {
     //    if (event.keyCode == 37) {
     //        //window.alert("Left Key Pressed");
