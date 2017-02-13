@@ -1,17 +1,18 @@
 QUnit.test("CreateBox", assert => {
     let boxSize = new Vector(9, 13);
-    let boxBody = Body.createBox(boxSize, 100, new Vector(200, 200), new Vector(80, -40), 2, 13);
+    let boxBody = createBox(boxSize, 100, new Vector(200, 200), new Vector(80, -40), 2, 13);
     assert.equal(boxBody.mass, 100);
     assert.deepEqual(boxBody.position, new Vector(200, 200));
     assert.deepEqual(boxBody.velocity, new Vector(80, -40));
     assert.close(boxBody.momenOfInertia, 2083.333333);
     assert.equal(boxBody.angle, 2);
     assert.equal(boxBody.angularVelocity, 13);
+    assert.equal(BodyTraits.energy(boxBody), 576041.6666666667);
 });
 
 QUnit.test("NoForceMotion", assert => {
-    let body1 = Body.createBox(new Vector(10, 10), 100, new Vector(200, 100), new Vector(10, 20), 2, 3);
-    let body2 = Body.createBox(new Vector(20, 20), 50, new Vector(100, 50), new Vector(50, 100), -4, -5);
+    let body1 = createBox(new Vector(10, 10), 100, new Vector(200, 100), new Vector(10, 20), 2, 3);
+    let body2 = createBox(new Vector(20, 20), 50, new Vector(100, 50), new Vector(50, 100), -4, -5);
     let physics = new Physics([body1, body2], []);
 
     assert.deepEqual(
@@ -39,8 +40,8 @@ QUnit.test("NoForceMotion", assert => {
 });
 
 QUnit.test("NormalizeAngles", assert => {
-    let body1 = Body.createBox(new Vector(10, 10), 100, new Vector(200, 100), new Vector(10, 20), 2, 3);
-    let body2 = Body.createBox(new Vector(20, 20), 50, new Vector(100, 50), new Vector(50, 100), -4, -5);
+    let body1 = createBox(new Vector(10, 10), 100, new Vector(200, 100), new Vector(10, 20), 2, 3);
+    let body2 = createBox(new Vector(20, 20), 50, new Vector(100, 50), new Vector(50, 100), -4, -5);
     let physics = new Physics([body1, body2], []);
 
     physics.advance(2.2);
@@ -51,8 +52,8 @@ QUnit.test("NormalizeAngles", assert => {
 QUnit.test("ForceFieldMotion", assert => {
     let physics = new Physics(
         [
-            Body.createBox(new Vector(10, 10), 100, new Vector(200, 100), new Vector(10, 20)),
-            Body.createBox(new Vector(20, 20), 50, new Vector(100, 50), new Vector(50, 100)),
+            createBox(new Vector(10, 10), 100, new Vector(200, 100), new Vector(10, 20)),
+            createBox(new Vector(20, 20), 50, new Vector(100, 50), new Vector(50, 100)),
         ],
         [
             Physics.createForceField(new Vector(2, 3)),
@@ -91,8 +92,8 @@ QUnit.test("ForceFieldMotion", assert => {
 
 QUnit.test("ForceFieldEnergy", assert => {
     const field = Physics.createForceField(new Vector(0, 3));
-    assert.equal(60000, field.energy(Body.createBox(new Vector(10, 10), 100, new Vector(200, 200), new Vector(10, 20))));
-    assert.equal(10500, field.energy(Body.createBox(new Vector(20, 20), 50, new Vector(100, 70), new Vector(50, 100))));
+    assert.equal(60000, field.energy(createBox(new Vector(10, 10), 100, new Vector(200, 200), new Vector(10, 20))));
+    assert.equal(10500, field.energy(createBox(new Vector(20, 20), 50, new Vector(100, 70), new Vector(50, 100))));
 });
 
 QUnit.test("InvalidAdvanceTimeValue", assert => {
@@ -118,7 +119,7 @@ QUnit.test("AppliedForceToDragAndTorque", assert => {
 });
 
 QUnit.test("DragAndTorqueMotion", assert => {
-    let body = Body.createBox(new Vector(10, 10), 2, new Vector(200, 100), new Vector(0, 0));
+    let body = createBox(new Vector(10, 10), 2, new Vector(200, 100), new Vector(0, 0));
     let physics = new Physics(
         [body],
         [
@@ -135,10 +136,10 @@ QUnit.test("DragAndTorqueMotion", assert => {
 });
 
 QUnit.test("FixedPointSpring", assert => {
-    let body = Body.createBox(new Vector(10, 10), 2, new Vector(21, 13), new Vector(10, 20));
+    let body = createBox(new Vector(10, 10), 2, new Vector(21, 13), new Vector(10, 20));
     let spring = Physics.createFixedSpring(15, new Vector(9, 13), body, new Vector(2, 3));
 
-    let someBody = Body.createBox(new Vector(10, 10), 2, new Vector(200, 100), new Vector(0, 0));
+    let someBody = createBox(new Vector(10, 10), 2, new Vector(200, 100), new Vector(0, 0));
     assert.equal(null, spring.getForce(someBody));
     assert.equal(0, spring.energy(someBody));
 
@@ -155,11 +156,11 @@ QUnit.test("FixedPointSpring", assert => {
 });
 
 QUnit.test("DynamicSpring", assert => {
-    let body1 = Body.createBox(new Vector(10, 10), 2, new Vector(21, 13), new Vector(10, 20));
-    let body2 = Body.createBox(new Vector(15, 25), 3, new Vector(57, 25), new Vector(30, 40));
+    let body1 = createBox(new Vector(10, 10), 2, new Vector(21, 13), new Vector(10, 20));
+    let body2 = createBox(new Vector(15, 25), 3, new Vector(57, 25), new Vector(30, 40));
     let spring = Physics.createDynamicSpring(15, body1, new Vector(9, 13), body2, new Vector(2, 3));
 
-    assert.equal(null, spring.getForce(Body.createBox(new Vector(10, 10), 2, new Vector(200, 100), new Vector(0, 0))));
+    assert.equal(null, spring.getForce(createBox(new Vector(10, 10), 2, new Vector(200, 100), new Vector(0, 0))));
 
     let appliedForceBody1 = spring.getForce(body1);
     assert.vectorEqual(appliedForceBody1.force, new Vector(435, 30));

@@ -81,7 +81,7 @@ class AppliedForce {
     }
 }
 
-class Body {
+interface Body {
     readonly mass: number;
     position: Vector;
     velocity: Vector;
@@ -89,24 +89,33 @@ class Body {
     readonly momenOfInertia: number;
     angle: number;
     angularVelocity: number;
+}
+interface BoxBody extends Body {
+    readonly size: Vector;
+}
 
-    static createBox(size: Vector, mass: number, position: Vector, velocity: Vector, angle: number = 0, angularVelocity: number = 0): Body {
-        let momentOfInertia = mass * (size.x * size.x + size.y * size.y) / 12;
-        return new Body(mass, position, velocity, momentOfInertia, angle, angularVelocity);
-    }
 
-    private constructor(mass: number, position: Vector, velocity: Vector, momenOfInertia: number, angle: number, angularVelocity: number) {
-        this.mass = mass;
-        this.position = position;
-        this.velocity = velocity;
-        this.momenOfInertia = momenOfInertia;
-        this.angle = angle;
-        this.angularVelocity = angularVelocity;
-    
+function createBox(size: Vector, mass: number, position: Vector, velocity: Vector, angle: number = 0, angularVelocity: number = 0): BoxBody {
+    let momentOfInertia = mass * (size.x * size.x + size.y * size.y) / 12;
+    return {
+        mass: mass,
+        position: position,
+        velocity: velocity,
+        momenOfInertia: momentOfInertia,
+        angle: angle,
+        angularVelocity: angularVelocity,
+        size: size,
+    };
+}
+
+
+class BodyTraits {
+    static toWorldPoint(body: Body, bodyPoint: Vector) {
+        const rotatedBodyPoint = bodyPoint.rotate(body.angle);
+        return body.position.add(rotatedBodyPoint);
     }
-    toWorldPoint(bodyPoint: Vector) {
-        const rotatedBodyPoint = bodyPoint.rotate(this.angle);
-        return this.position.add(rotatedBodyPoint);
+    static energy(body: Body) {
+        return (body.velocity.squareLength * body.mass + body.angularVelocity * body.angularVelocity * body.momenOfInertia) / 2
     }
 }
 
@@ -114,14 +123,23 @@ interface ForceProvider {
     getForce(body: Body): AppliedForce;
     energy?(body: Body): number;
 }
-interface Spring extends ForceProvider {
+interface ForceField extends ForceProvider {
+    acceleration: Vector;
+}
+interface SpringForceProvider extends ForceProvider {
     //TODO test methods
     from(): Vector;
     to(): Vector;
 }
 
+interface PhysicsSetup {
+    boxes: BoxBody[];
+    forceFields: ForceProvider[];
+    springs: SpringForceProvider[];
+}
+
 class Physics {
-    static createForceField(acceleration: Vector): ForceProvider {
+    static createForceField(acceleration: Vector): ForceField {
         return {
             getForce: body => {
                 let mass = body.mass;
@@ -133,10 +151,14 @@ class Physics {
                     throw "todo";
                 return acceleration.y * body.mass * body.position.y; 
             },
+            acceleration: acceleration,
         };
     }
-    static createFixedSpring(rate: number, fixedPoint: Vector, body: Body, bodyPoint: Vector): Spring {
-        let actualBodyPoint = () => body.toWorldPoint(bodyPoint);
+    static createGravity(g: number): ForceField {
+        return Physics.createForceField(new Vector(0, g));
+    } 
+    static createFixedSpring(rate: number, fixedPoint: Vector, body: Body, bodyPoint: Vector): SpringForceProvider {
+        let actualBodyPoint = () => BodyTraits.toWorldPoint(body, bodyPoint);
         return {
             getForce: x => {
                 if (body !== x)
@@ -156,9 +178,9 @@ class Physics {
             to: actualBodyPoint,
         };
     }
-    static createDynamicSpring(rate: number, fromBody: Body, fromBodyPoint: Vector, toBody: Body, toBodyPoint: Vector): Spring {
-        let fromBodyWorldPoint = () => fromBody.toWorldPoint(fromBodyPoint);
-        let toBodyWorldPoint = () => toBody.toWorldPoint(toBodyPoint);
+    static createDynamicSpring(rate: number, fromBody: Body, fromBodyPoint: Vector, toBody: Body, toBodyPoint: Vector): SpringForceProvider {
+        let fromBodyWorldPoint = () => BodyTraits.toWorldPoint(fromBody, fromBodyPoint);
+        let toBodyWorldPoint = () => BodyTraits.toWorldPoint(toBody, toBodyPoint);
         return {
             getForce: x => {
                 if (fromBody !== x && toBody !== x)
@@ -190,6 +212,10 @@ class Physics {
         this.bodies = bodies;
         this.forces = forces;
     }
+    static create(setup: PhysicsSetup) {
+        return new Physics(setup.boxes, setup.forceFields.concat(setup.springs));
+    }
+
     public readonly positions = () => this.bodies.map(x => x.position);
     public readonly velocities = () => this.bodies.map((x, _) => x.velocity);
     public readonly angles = () => this.bodies.map((x, _) => x.angle);

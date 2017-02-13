@@ -5,33 +5,50 @@ interface AdvanceCallback {
     (timeDelta: number): void;
 }
 
+interface Box {
+    readonly position: Vector;
+    readonly size: Vector;
+    readonly angle: number;
+}
+interface Spring {
+    from(): Vector;
+    to(): Vector;
+}
+
 
 class View {
-    public static createBox(position: () => Vector, size: Vector, angle: () => number): View {
+    static combine(views: View[], offset: Vector) {
         return new View(context => {
-            let pos = position();
+            views.forEach(x => x.draw(context));
+        }, offset);
+    }
+    static createBox(box: Box): View {
+        return new View(context => {
+            let pos = box.position;
             context.translate(pos.x, pos.y)
-            context.rotate(angle());
+            context.rotate(box.angle);
             context.fillStyle = "white";
-            context.fillRect(-size.x / 2, -size.y / 2, size.x, size.y);
+            context.fillRect(-box.size.x / 2, -box.size.y / 2, box.size.x, box.size.y);
         });
     }
-    public static createSpring(from: () => Vector, to: () => Vector): View {
+    static createSpring(spring: Spring): View {
         return new View(context => {
             context.strokeStyle = "green";
             context.beginPath();
-            let f = from();
-            let t = to();
+            let f = spring.from();
+            let t = spring.to();
             context.moveTo(f.x, f.y);
             context.lineTo(t.x, t.y);
             context.stroke();
         });
     }
     readonly draw: DrawCallback;
-    private constructor(draw: DrawCallback) {
+    private constructor(draw: DrawCallback, offset?: Vector) {
         this.draw = context => {
             try {
                 context.save();
+                if (offset)
+                    context.translate(offset.x, offset.y);
                 draw(context);
             } finally {
                 context.restore();
