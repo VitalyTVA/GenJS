@@ -15,6 +15,15 @@ class Simulations {
             springs: [ Physics.createFixedSpring(250, new Vector(0, 0), box, new Vector(boxSize.x / 2, 0)) ]
         }
     }
+    static createUnbalancedSpringPendulum_noGravity(): PhysicsSetup {
+        let boxSize = new Vector(100, 20);
+        let box = createBox(boxSize, 100, new Vector(0, 300), new Vector(0, 0));
+        return {
+            boxes: [box],
+            forceFields: [],
+            springs: [Physics.createFixedSpring(350, new Vector(0, 0), box, new Vector(boxSize.x / 2, 0))]
+        }
+    }
     static createDoubleUnbalancedSpringPendulum(): PhysicsSetup {
         let boxSize3 = new Vector(100, 20);
         let box3 = createBox(boxSize3, 100, new Vector(0, 200), new Vector(0, 0));
@@ -99,6 +108,7 @@ window.onload = () => {
             [Simulations.createDoubleUnbalancedSpringPendulum(), new Vector(300, 100)],
             [Simulations.createBalancedRotatingBoxes(), new Vector(500, 300)],
             [Simulations.createPushPullSwing(), new Vector(700, 300)],
+            [Simulations.createUnbalancedSpringPendulum_noGravity(), new Vector(900, 300)],
         ],
         debug => span.innerHTML = debug
     );
