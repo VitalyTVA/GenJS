@@ -247,6 +247,13 @@ class Physics {
 
                 let r = body.position.vectorTo(forceValue.point);
                 let torque = r.x * forceValue.force.y - r.y * forceValue.force.x;
+
+                //let torqueForce = torque / r.length;
+                //let error = Math.abs(forceValue.force.squareLength - torqueForce * torqueForce - drag.squareLength);
+                //if (error > 0.0001) {
+                //    console.log(error);
+                //}
+
                 totalForceX += drag.x;
                 totalForceY += drag.y;
                 totalTorque += torque;
@@ -264,14 +271,5 @@ class Physics {
             if (Math.abs(body.angle) > Math.PI * 2)
                 body.angle = body.angle % (Math.PI * 2);
         }
-    }
-    totalEnergy() {
-        //TODO test
-        let res = 0;
-        this.bodies.forEach(x => {
-            res += BodyTraits.energy(x);
-            this.forces.forEach(f => res += f.energy(x));
-        });
-        return res;
     }
 }

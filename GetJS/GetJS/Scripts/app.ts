@@ -87,12 +87,22 @@ function createSimulation(canvas: HTMLCanvasElement, setups: [PhysicsSetup, Vect
         dt => physices.forEach(x => {
             x.advance(dt);
             let res = "";
-            physices.forEach(x => res += Math.round(x.totalEnergy()) + "<br/>");
+            physices.forEach(x => res += Math.round(totalEnergy(x)) + "<br/>");
             count++;
             if (count % 20 == 0)
                 debug(res);
         }));
 }
+function totalEnergy(p: Physics) {
+    //TODO test
+    let res = 0;
+    p.bodies.forEach(x => {
+        res += BodyTraits.energy(x);
+        p.forces.forEach(f => res += f.energy(x));
+    });
+    return res;
+}
+
 
 window.onload = () => {
     var el = document.getElementById('content');

@@ -160,7 +160,9 @@ QUnit.test("DynamicSpring", assert => {
     let body2 = createBox(new Vector(15, 25), 3, new Vector(57, 25), new Vector(30, 40));
     let spring = Physics.createDynamicSpring(15, body1, new Vector(9, 13), body2, new Vector(2, 3));
 
-    assert.equal(null, spring.getForce(createBox(new Vector(10, 10), 2, new Vector(200, 100), new Vector(0, 0))));
+    let someBody = createBox(new Vector(10, 10), 2, new Vector(200, 100), new Vector(0, 0));
+    assert.equal(spring.getForce(someBody), null);
+    assert.equal(spring.energy(someBody), 0);
 
     let appliedForceBody1 = spring.getForce(body1);
     assert.vectorEqual(appliedForceBody1.force, new Vector(435, 30));
@@ -168,6 +170,7 @@ QUnit.test("DynamicSpring", assert => {
     let appliedForceBody2 = spring.getForce(body2);
     assert.vectorEqual(appliedForceBody2.force, new Vector(-435, -30));
     assert.vectorEqual(appliedForceBody2.point, new Vector(59, 28));
+    assert.equal(spring.energy(body1) + spring.energy(body2), 6337.5);
 
 
     body1.angle = 2.2;
@@ -178,4 +181,5 @@ QUnit.test("DynamicSpring", assert => {
     appliedForceBody2 = spring.getForce(body2);
     assert.vectorEqual(appliedForceBody2.force, new Vector(-733.2255037095349, -153.99364925175052));
     assert.vectorEqual(appliedForceBody2.point, new Vector(54.074736942349546, 22.89219639350685));
+    assert.close(spring.energy(body1) + spring.energy(body2), 18711.122776665743);
 });
