@@ -1,28 +1,3 @@
-
-
-class Greeter {
-    element: HTMLElement;
-    span: HTMLElement;
-    timerToken: number;
-
-    constructor(element: HTMLElement) {
-        this.element = element;
-        this.element.innerHTML += "The time is: ";
-        this.span = document.createElement('span');
-        this.element.appendChild(this.span);
-        this.span.innerText = new Date().toUTCString();
-    }
-
-    start() {
-        this.timerToken = setInterval(() => this.span.innerHTML = new Date().toUTCString(), 500);
-    }
-
-    stop() {
-        clearTimeout(this.timerToken);
-    }
-
-}
-
 class Simulations {
     static createBallisticTrajectory(): PhysicsSetup {
         return {
@@ -91,16 +66,30 @@ class Simulations {
 //    }
 //}
 
-function createSimulation(canvas: HTMLCanvasElement, setups: [PhysicsSetup, Vector][]) {
+
+
+function createSimulation(canvas: HTMLCanvasElement, setups: [PhysicsSetup, Vector][], debug: (debug: string) => void) {
     let physices = setups.map(([x, o]) => Physics.create(x));
     let views = setups.map(([x, o]) => View.combine(x.boxes.map(View.createBox).concat(x.springs.map(View.createSpring)), o));
-    return Simulation.createSimulation(canvas, views, dt => physices.forEach(x => x.advance(dt)));
+    let count = 0;
+    return Simulation.createSimulation(
+        canvas,
+        views,
+        dt => physices.forEach(x => {
+            x.advance(dt);
+            let res = "";
+            physices.forEach(x => res += Math.round(x.totalEnergy()) + "<br/>");
+            count++;
+            if (count % 20 == 0)
+                debug(res);
+        }));
 }
 
 window.onload = () => {
     var el = document.getElementById('content');
-    var greeter = new Greeter(el);
-    greeter.start();
+    let span = document.createElement('span');
+    el.appendChild(span);
+
 
     var simulation = createSimulation(
         <HTMLCanvasElement>document.getElementById('canvas'),
@@ -110,8 +99,9 @@ window.onload = () => {
             [Simulations.createDoubleUnbalancedSpringPendulum(), new Vector(300, 100)],
             [Simulations.createBalancedRotatingBoxes(), new Vector(500, 300)],
             [Simulations.createPushPullSwing(), new Vector(700, 300)],
-        ]
-    );1
+        ],
+        debug => span.innerHTML = debug
+    );
 
     document.getElementById("pauseButton").addEventListener("click", event => {
         simulation.pause();

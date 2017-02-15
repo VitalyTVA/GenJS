@@ -92,8 +92,8 @@ QUnit.test("ForceFieldMotion", assert => {
 
 QUnit.test("ForceFieldEnergy", assert => {
     const field = Physics.createForceField(new Vector(0, 3));
-    assert.equal(60000, field.energy(createBox(new Vector(10, 10), 100, new Vector(200, 200), new Vector(10, 20))));
-    assert.equal(10500, field.energy(createBox(new Vector(20, 20), 50, new Vector(100, 70), new Vector(50, 100))));
+    assert.equal(-60000, field.energy(createBox(new Vector(10, 10), 100, new Vector(200, 200), new Vector(10, 20))));
+    assert.equal(-10500, field.energy(createBox(new Vector(20, 20), 50, new Vector(100, 70), new Vector(50, 100))));
 });
 
 QUnit.test("InvalidAdvanceTimeValue", assert => {

@@ -149,7 +149,7 @@ class Physics {
             energy: body => {
                 if (acceleration.x != 0)
                     throw "todo";
-                return acceleration.y * body.mass * body.position.y; 
+                return -acceleration.y * body.mass * body.position.y; 
             },
             acceleration: acceleration,
         };
