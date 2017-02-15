@@ -198,7 +198,10 @@ class Physics {
                 return new AppliedForce(force, from);
             },
             energy: x => {
-                throw "todo";
+                //TODO test
+                if (fromBody !== x)
+                    return 0;
+                return fromBodyWorldPoint().subtract(toBodyWorldPoint()).squareLength * rate / 2;
             },
             from: fromBodyWorldPoint,
             to: toBodyWorldPoint,
@@ -261,5 +264,14 @@ class Physics {
             if (Math.abs(body.angle) > Math.PI * 2)
                 body.angle = body.angle % (Math.PI * 2);
         }
+    }
+    totalEnergy() {
+        //TODO test
+        let res = 0;
+        this.bodies.forEach(x => {
+            res += BodyTraits.energy(x);
+            this.forces.forEach(f => res += f.energy(x));
+        });
+        return res;
     }
 }
