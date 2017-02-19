@@ -197,7 +197,29 @@ QUnit.test("FreeFallAccuracy", assert => {
     for (let i = 0; i < 1000; i += 1) {
         physics.advance();
     }
+    physics.advancePositions(physics.step / 2);
     assert.close(physics.totalEnergy() - initialEnergy, -25000);
     const totalTime = steps * physics.step;
     assert.close(body.velocity.y - gravity.acceleration.y * totalTime * totalTime / 2, -2000);
 });
+
+QUnit.test("SpringPendulumAccuracy", assert => {
+    let body = createBox(new Vector(10, 10), 100, new Vector(0, 400), new Vector(0, 10));
+    let gravity = Physics.createGravity(100);
+    let spring = Physics.createFixedSpring(25, new Vector(0, 0), body, new Vector(0, 0));
+    let physics = new Physics(
+        [body],
+        [spring, gravity],
+        0.01
+    );
+    const initialEnergy = physics.totalEnergy();
+    const steps = 1000;
+    for (let i = 0; i < 1000; i += 1) {
+        physics.advance();
+    }
+    physics.advancePositions(physics.step / 2);
+    assert.close(physics.totalEnergy() - initialEnergy, -6.74292322434485);
+    //const totalTime = steps * physics.step;
+    //assert.close(body.velocity.y - gravity.acceleration.y * totalTime * totalTime / 2, -2000);
+});
+

@@ -209,6 +209,8 @@ class Physics {
         this.bodies = bodies;
         this.forces = forces;
         this.step = step;
+
+        this.advanceVelocities(step / 2);
     }
     static create(setup: PhysicsSetup) {
         return new Physics(setup.boxes, setup.forceFields.concat(setup.springs));
@@ -220,6 +222,13 @@ class Physics {
     readonly angularVelocities = () => this.bodies.map((x, _) => x.angularVelocity);
 
     advance() {
+        //this.advanceVelocities(this.step);
+        //this.advancePositions(this.step);
+
+        this.advancePositions(this.step);
+        this.advanceVelocities(this.step);
+    }
+    private advanceVelocities(dt: number) {
         for (let body of this.bodies) {
             let totalForceX = 0;
             let totalForceY = 0;
@@ -237,15 +246,16 @@ class Physics {
                 totalTorque += torque;
             }
             var v = body.velocity;
-            body.velocity = new Vector(v.x + this.step * totalForceX / body.mass, v.y + this.step * totalForceY / body.mass);
-            body.angularVelocity = body.angularVelocity + this.step * totalTorque / body.momenOfInertia;
+            body.velocity = new Vector(v.x + dt * totalForceX / body.mass, v.y + dt * totalForceY / body.mass);
+            body.angularVelocity = body.angularVelocity + dt * totalTorque / body.momenOfInertia;
         }
-
+    }
+    advancePositions(dt: number) {
         for (var body of this.bodies) {
             var p = body.position;
             var v = body.velocity;
-            body.position = new Vector(p.x + v.x * this.step, p.y + v.y * this.step);
-            body.angle = body.angle + body.angularVelocity * this.step;
+            body.position = new Vector(p.x + v.x * dt, p.y + v.y * dt);
+            body.angle = body.angle + body.angularVelocity * dt;
             if (Math.abs(body.angle) > Math.PI * 2)
                 body.angle = body.angle % (Math.PI * 2);
         }
