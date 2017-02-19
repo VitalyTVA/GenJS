@@ -68,17 +68,6 @@ class AppliedForce {
         this.force = force;
         this.point = point;
     }
-    drag(position: Vector): Vector{
-        if (position.equals(this.point))
-            return this.force;
-        let centerVector = position.vectorTo(this.point);
-        let centerVectorSquareLength = centerVector.squareLength;
-
-        let dragLength = centerVector.scalarProduct(this.force) / Math.sqrt(centerVectorSquareLength);
-
-        let drag = centerVector.setLength(dragLength);
-        return drag;
-    }
 }
 
 interface Body {
@@ -139,6 +128,7 @@ interface PhysicsSetup {
 }
 
 class Physics {
+    static readonly defaultStep = 0.01;
     static createForceField(acceleration: Vector): ForceField {
         return {
             getForce: body => {
@@ -209,30 +199,27 @@ class Physics {
     }
 
 
-    public readonly bodies: Array<Body>;
-    public readonly forces: Array<ForceProvider>;
-    constructor(bodies: Array<Body>, forces: Array<ForceProvider>) {
+    readonly bodies: Array<Body>;
+    readonly forces: Array<ForceProvider>;
+    readonly step: number;
+    constructor(bodies: Array<Body>, forces: Array<ForceProvider>, step: number = Physics.defaultStep) {
+        if (step <= 0)
+            throw "timeDelta should be positive";
+
         this.bodies = bodies;
         this.forces = forces;
+        this.step = step;
     }
     static create(setup: PhysicsSetup) {
         return new Physics(setup.boxes, setup.forceFields.concat(setup.springs));
     }
 
-    public readonly positions = () => this.bodies.map(x => x.position);
-    public readonly velocities = () => this.bodies.map((x, _) => x.velocity);
-    public readonly angles = () => this.bodies.map((x, _) => x.angle);
-    public readonly angularVelocities = () => this.bodies.map((x, _) => x.angularVelocity);
+    readonly positions = () => this.bodies.map(x => x.position);
+    readonly velocities = () => this.bodies.map((x, _) => x.velocity);
+    readonly angles = () => this.bodies.map((x, _) => x.angle);
+    readonly angularVelocities = () => this.bodies.map((x, _) => x.angularVelocity);
 
-    advance (timeDelta: number) {
-        const steps = 1;
-        for (let i = 0; i < steps; i++) {
-            this.advanceCore(timeDelta / steps);
-        }
-    }
-    private advanceCore (timeDelta: number) {
-        if (timeDelta <= 0)
-            throw "timeDelta should be positive";
+    advance() {
         for (let body of this.bodies) {
             let totalForceX = 0;
             let totalForceY = 0;
@@ -242,34 +229,33 @@ class Physics {
                 if (forceValue == null)
                     continue;
 
-                let drag = forceValue.drag(body.position);
-                //let drag = forceValue.force;
-
                 let r = body.position.vectorTo(forceValue.point);
                 let torque = r.x * forceValue.force.y - r.y * forceValue.force.x;
 
-                //let torqueForce = torque / r.length;
-                //let error = Math.abs(forceValue.force.squareLength - torqueForce * torqueForce - drag.squareLength);
-                //if (error > 0.0001) {
-                //    console.log(error);
-                //}
-
-                totalForceX += drag.x;
-                totalForceY += drag.y;
+                totalForceX += forceValue.force.x;
+                totalForceY += forceValue.force.y;
                 totalTorque += torque;
             }
             var v = body.velocity;
-            body.velocity = new Vector(v.x + timeDelta * totalForceX / body.mass, v.y + timeDelta * totalForceY / body.mass);
-            body.angularVelocity = body.angularVelocity + timeDelta * totalTorque / body.momenOfInertia;
+            body.velocity = new Vector(v.x + this.step * totalForceX / body.mass, v.y + this.step * totalForceY / body.mass);
+            body.angularVelocity = body.angularVelocity + this.step * totalTorque / body.momenOfInertia;
         }
 
         for (var body of this.bodies) {
             var p = body.position;
             var v = body.velocity;
-            body.position = new Vector(p.x + v.x * timeDelta, p.y + v.y * timeDelta);
-            body.angle = body.angle + body.angularVelocity * timeDelta;
+            body.position = new Vector(p.x + v.x * this.step, p.y + v.y * this.step);
+            body.angle = body.angle + body.angularVelocity * this.step;
             if (Math.abs(body.angle) > Math.PI * 2)
                 body.angle = body.angle % (Math.PI * 2);
         }
+    }
+    totalEnergy() {
+        let res = 0;
+        this.bodies.forEach(x => {
+            res += BodyTraits.energy(x);
+            this.forces.forEach(f => res += f.energy(x));
+        });
+        return res;
     }
 }

@@ -2,7 +2,7 @@ interface DrawCallback {
     (context: CanvasRenderingContext2D): void;
 }
 interface AdvanceCallback {
-    (timeDelta: number): void;
+    (): void;
 }
 
 interface Box {
@@ -58,12 +58,11 @@ class View {
 }
 
 class Simulation {
-    static createSimulation(canvas: HTMLCanvasElement, objects: View[], advance: AdvanceCallback) {
+    static createSimulation(canvas: HTMLCanvasElement, objects: View[], advance: AdvanceCallback, step: number) {
         const context = canvas.getContext("2d");
         let lastTime = 0;
         let elapsedTime = 0;
         let simulationTime = 0;
-        const step = 1 / 60;;
         let pause = false;
         let oneFrame = false;
 
@@ -81,7 +80,7 @@ class Simulation {
                 let dt = (time - lastTime) / 1000;
                 elapsedTime += dt;
                 while (simulationTime < elapsedTime) {
-                    advance(step);
+                    advance();
                     simulationTime += step;
                 }
                 draw();
@@ -89,7 +88,7 @@ class Simulation {
             } else if (oneFrame) {
                 //TODO duplicate code
                 clear();
-                advance(step);
+                advance();
                 draw();
                 oneFrame = false;
             }
