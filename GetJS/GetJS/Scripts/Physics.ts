@@ -126,7 +126,10 @@ interface PhysicsSetup {
     forceFields: ForceProvider[];
     springs: SpringForceProvider[];
 }
-
+enum AdvanceMode {
+    Default,
+    Smart,
+}
 class Physics {
     static readonly defaultStep = 0.01;
     static createForceField(acceleration: Vector): ForceField {
@@ -202,16 +205,22 @@ class Physics {
     readonly bodies: Array<Body>;
     readonly forces: Array<ForceProvider>;
     readonly step: number;
-    constructor(bodies: Array<Body>, forces: Array<ForceProvider>, step: number = Physics.defaultStep) {
+    readonly advanceMode: AdvanceMode;
+    stopped: boolean;
+    constructor(bodies: Array<Body>, forces: Array<ForceProvider>, step: number = Physics.defaultStep, advanceMode: AdvanceMode = AdvanceMode.Default) {
         if (step <= 0)
             throw "timeDelta should be positive";
 
         this.bodies = bodies;
         this.forces = forces;
         this.step = step;
+        this.advanceMode = advanceMode;
+
+        if (this.advanceMode == AdvanceMode.Smart)
+            this.advanceVelocities(step / 2);
     }
     static create(setup: PhysicsSetup) {
-        return new Physics(setup.boxes, setup.forceFields.concat(setup.springs));
+        return new Physics(setup.boxes, setup.forceFields.concat(setup.springs), Physics.defaultStep, AdvanceMode.Smart);
     }
 
     readonly positions = () => this.bodies.map(x => x.position);
@@ -220,6 +229,24 @@ class Physics {
     readonly angularVelocities = () => this.bodies.map((x, _) => x.angularVelocity);
 
     advance() {
+        if (this.stopped) {
+            throw "Simulation stopped";
+        }
+        if (this.advanceMode == AdvanceMode.Default) {
+            this.advanceVelocities(this.step);
+            this.advancePositions(this.step);
+        } else {
+            this.advancePositions(this.step);
+            this.advanceVelocities(this.step);
+        }
+    }
+    catchUpPositions() {
+        if (this.advanceMode == AdvanceMode.Smart) {
+            this.advancePositions(this.step / 2);
+            this.stopped = true;
+        }
+    }
+    private advanceVelocities(dt: number) {
         for (let body of this.bodies) {
             let totalForceX = 0;
             let totalForceY = 0;
@@ -237,15 +264,16 @@ class Physics {
                 totalTorque += torque;
             }
             var v = body.velocity;
-            body.velocity = new Vector(v.x + this.step * totalForceX / body.mass, v.y + this.step * totalForceY / body.mass);
-            body.angularVelocity = body.angularVelocity + this.step * totalTorque / body.momenOfInertia;
+            body.velocity = new Vector(v.x + dt * totalForceX / body.mass, v.y + dt * totalForceY / body.mass);
+            body.angularVelocity = body.angularVelocity + dt * totalTorque / body.momenOfInertia;
         }
-
+    }
+    private advancePositions(dt: number) {
         for (var body of this.bodies) {
             var p = body.position;
             var v = body.velocity;
-            body.position = new Vector(p.x + v.x * this.step, p.y + v.y * this.step);
-            body.angle = body.angle + body.angularVelocity * this.step;
+            body.position = new Vector(p.x + v.x * dt, p.y + v.y * dt);
+            body.angle = body.angle + body.angularVelocity * dt;
             if (Math.abs(body.angle) > Math.PI * 2)
                 body.angle = body.angle % (Math.PI * 2);
         }

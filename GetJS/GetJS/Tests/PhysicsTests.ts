@@ -89,7 +89,41 @@ QUnit.test("ForceFieldMotion", assert => {
         physics.angularVelocities(),
         [0, 0]
     );
+
+    physics.catchUpPositions();
+    assert.deepEqual(
+        physics.positions(),
+        [new Vector(201.92, 104.2), new Vector(109.92, 70.2)]
+    );
+    assert.deepEqual(
+        physics.velocities(),
+        [new Vector(9.6, 21), new Vector(49.6, 101)]
+    );
 });
+
+QUnit.test("ForceFieldMotion_SmartAdvance", assert => {
+    let box = createBox(new Vector(10, 10), 100, new Vector(200, 100), new Vector(10, 20));
+    let physics = new Physics(
+        [box],
+        [Physics.createForceField(new Vector(-2, 5))],
+        0.2,
+        AdvanceMode.Smart,
+    );
+
+    assert.vectorEqual(box.position, new Vector(200, 100));
+    assert.vectorEqual(box.velocity, new Vector(9.8, 20.5));
+
+    physics.advance();
+    assert.vectorEqual(box.position, new Vector(201.96, 104.1));
+    assert.vectorEqual(box.velocity, new Vector(9.4, 21.5));
+
+    physics.catchUpPositions();
+    assert.vectorEqual(box.position, new Vector(202.9, 106.25));
+    assert.vectorEqual(box.velocity, new Vector(9.4, 21.5));
+
+    assert.throws(() => physics.advance(), "Simulation stopped");
+});
+
 
 QUnit.test("ForceFieldEnergy", assert => {
     const field = Physics.createForceField(new Vector(0, 3));
@@ -190,17 +224,20 @@ QUnit.test("FreeFallAccuracy", assert => {
     let physics = new Physics(
         [body],
         [gravity],
-        0.01
+        0.01,
+        AdvanceMode.Smart
     );
     const initialEnergy = physics.totalEnergy();
     const steps = 1000;
     for (let i = 0; i < steps; i += 1) {
         physics.advance();
     }
+    physics.catchUpPositions();
+    assert.close(physics.totalEnergy() - initialEnergy, -12.5);
     const totalTime = steps * physics.step;
-    assert.close(body.velocity.y - gravity.acceleration.y * totalTime, 0);
-    assert.close(body.position.y - gravity.acceleration.y * totalTime * totalTime / 2, 2.5);
+    assert.close(body.position.y - gravity.acceleration.y * totalTime * totalTime / 2, 2.50125);
 });
+
 QUnit.test("SpringPendulumAccuracy", assert => {
     let body = createBox(new Vector(10, 10), 100, new Vector(0, 400), new Vector(0, 10));
     let gravity = Physics.createGravity(100);
@@ -208,12 +245,15 @@ QUnit.test("SpringPendulumAccuracy", assert => {
     let physics = new Physics(
         [body],
         [spring, gravity],
-        0.01
+        0.01,
+        AdvanceMode.Smart
     );
     const initialEnergy = physics.totalEnergy();
     const steps = 1000;
     for (let i = 0; i < steps; i += 1) {
         physics.advance();
     }
-    assert.close(physics.totalEnergy() - initialEnergy, -6.74292322434485);
+    physics.catchUpPositions();
+    assert.close(physics.totalEnergy() - initialEnergy, 0.0025572783779352903);
 });
+
