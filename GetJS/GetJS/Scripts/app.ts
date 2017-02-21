@@ -68,9 +68,9 @@ class Simulations {
         let boxSize = new Vector(40, 40);
         let box = createBox(boxSize, 100, new Vector(0, -200), new Vector(50, 0));
         let constraint: FixedLengthConstraintForce = {
-            getConstraintForce: (body, externalForce) => {
+            getConstraintForce: (body, realBodyPosition, externalForce) => {
                 //TODO now works only for constraints with origin in zero
-                let p = body.position;
+                let p = realBodyPosition;
                 let v = body.velocity;
                 let lambda = -(externalForce.scalarProduct(p) + body.mass * v.squareLength) / p.squareLength;
                 return p.mult(lambda);

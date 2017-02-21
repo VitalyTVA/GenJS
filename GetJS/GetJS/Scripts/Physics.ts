@@ -121,7 +121,7 @@ interface SpringForceProvider extends ForceProvider {
     to(): Vector;
 }
 interface ConstraintForce {
-    getConstraintForce(body: Body, externalForce: Vector): Vector;
+    getConstraintForce(body: Body, realBodyPosition: Vector, externalForce: Vector): Vector;
 }
 interface FixedLengthConstraintForce extends ConstraintForce {
     readonly origin: Vector;
@@ -215,6 +215,7 @@ class Physics {
     readonly step: number;
     readonly advanceMode: AdvanceMode;
     readonly constraints: Array<ConstraintForce>;
+    readonly realPositions: Vector[];
     stopped: boolean;
     constructor(bodies: Array<Body>, forces: Array<ForceProvider>, constraints: Array<ConstraintForce>, step: number = Physics.defaultStep, advanceMode: AdvanceMode = AdvanceMode.Default) {
         if (step <= 0)
@@ -225,6 +226,8 @@ class Physics {
         this.step = step;
         this.advanceMode = advanceMode;
         this.constraints = constraints;
+
+        this.realPositions = bodies.map(x => x.position);
 
         if (this.advanceMode == AdvanceMode.Smart)
             this.advanceVelocities(step / 2);
@@ -261,7 +264,8 @@ class Physics {
         }
     }
     private advanceVelocities(dt: number) {
-        for (let body of this.bodies) {
+        for (let i = 0; i < this.bodies.length; i++) {
+            let body = this.bodies[i];
             let totalForceX = 0;
             let totalForceY = 0;
             let totalTorque = 0;
@@ -280,9 +284,7 @@ class Physics {
             if (this.constraints.length > 1)
                 throw "TODO";
             if (this.constraints.length == 1) {
-                if (this.advanceMode == AdvanceMode.Smart)
-                    throw "TODO";
-                let constraintForce = this.constraints[0].getConstraintForce(body, new Vector(totalForceX, totalForceY));
+                let constraintForce = this.constraints[0].getConstraintForce(body, this.realPositions[i], new Vector(totalForceX, totalForceY));
                 totalForceX += constraintForce.x;
                 totalForceY += constraintForce.y;
             }
@@ -293,10 +295,18 @@ class Physics {
         }
     }
     private advancePositions(dt: number) {
-        for (var body of this.bodies) {
+        for (let i = 0; i < this.bodies.length; i++) {
+            let body = this.bodies[i];
             var p = body.position;
             var v = body.velocity;
             body.position = new Vector(p.x + v.x * dt, p.y + v.y * dt);
+
+            //TODO angle, etc
+            if (this.advanceMode == AdvanceMode.Default)
+                this.realPositions[i] = body.position;
+            else
+                this.realPositions[i] = new Vector(p.x + v.x * dt / 2, p.y + v.y * dt / 2);
+
             body.angle = body.angle + body.angularVelocity * dt;
             if (Math.abs(body.angle) > Math.PI * 2)
                 body.angle = body.angle % (Math.PI * 2);
