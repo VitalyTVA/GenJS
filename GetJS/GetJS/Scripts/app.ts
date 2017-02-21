@@ -64,6 +64,27 @@ class Simulations {
             springs: [spring1, spring2]
         }
     }
+    static createFixedLengthPendulum(): PhysicsSetup {
+        let boxSize = new Vector(40, 40);
+        let box = createBox(boxSize, 100, new Vector(0, -200), new Vector(50, 0));
+        let constraint: FixedLengthConstraintForce = {
+            getConstraintForce: (body, externalForce) => {
+                //TODO now works only for constraints with origin in zero
+                let p = body.position;
+                let v = body.velocity;
+                let lambda = -(externalForce.scalarProduct(p) + body.mass * v.squareLength) / p.squareLength;
+                return p.mult(lambda);
+            },
+            origin: new Vector(0, 0),
+            length: box.position.length,
+        };
+        return {
+            boxes: [box],
+            forceFields: [Physics.createGravity(100)],
+            springs: [],
+            constraints: [constraint],
+        }
+    }
 
 }
 
@@ -79,7 +100,12 @@ class Simulations {
 
 function createSimulation(canvas: HTMLCanvasElement, setups: [PhysicsSetup, Vector][], debug: (debug: string) => void) {
     let physices = setups.map(([x, o]) => Physics.create(x));
-    let views = setups.map(([x, o]) => View.combine(x.boxes.map(View.createBox).concat(x.springs.map(View.createSpring)), o));
+    let views = setups.map(([x, o]) => {
+        let views = x.boxes.map(View.createBox).concat(x.springs.map(View.createSpring));
+        if (x.constraints != undefined)
+            views = views.concat(x.constraints.map(View.createFixedLengthConstraint));
+        return View.combine(views, o);
+    });
     let count = 0;
     return Simulation.createSimulation(
         canvas,
@@ -110,6 +136,7 @@ window.onload = () => {
             [Simulations.createBalancedRotatingBoxes(), new Vector(500, 300)],
             [Simulations.createPushPullSwing(), new Vector(700, 300)],
             [Simulations.createUnbalancedSpringPendulum_noGravity(), new Vector(900, 300)],
+            [Simulations.createFixedLengthPendulum(), new Vector(1100, 300)],
         ],
         debug => span.innerHTML = debug
     );

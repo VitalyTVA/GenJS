@@ -13,7 +13,7 @@ QUnit.test("CreateBox", assert => {
 QUnit.test("NoForceMotion", assert => {
     let body1 = createBox(new Vector(10, 10), 100, new Vector(200, 100), new Vector(10, 20), 2, 3);
     let body2 = createBox(new Vector(20, 20), 50, new Vector(100, 50), new Vector(50, 100), -4, -5);
-    let physics = new Physics([body1, body2], [], 0.2);
+    let physics = new Physics([body1, body2], [], [], 0.2);
 
     assert.deepEqual(
         physics.positions(),
@@ -42,7 +42,7 @@ QUnit.test("NoForceMotion", assert => {
 QUnit.test("NormalizeAngles", assert => {
     let body1 = createBox(new Vector(10, 10), 100, new Vector(200, 100), new Vector(10, 20), 2, 3);
     let body2 = createBox(new Vector(20, 20), 50, new Vector(100, 50), new Vector(50, 100), -4, -5);
-    let physics = new Physics([body1, body2], [], 2.2);
+    let physics = new Physics([body1, body2], [], [], 2.2);
 
     physics.advance();
     assert.deepEqual(physics.angles(), [2.316814692820415, -2.4336293856408275]);
@@ -59,7 +59,7 @@ QUnit.test("ForceFieldMotion", assert => {
             Physics.createForceField(new Vector(2, 3)),
             { getForce: (body => null) },
             Physics.createForceField(new Vector(-4, 2)),
-        ],
+        ], [],
         0.2
     );
 
@@ -106,6 +106,7 @@ QUnit.test("ForceFieldMotion_SmartAdvance", assert => {
     let physics = new Physics(
         [box],
         [Physics.createForceField(new Vector(-2, 5))],
+        [],
         0.2,
         AdvanceMode.Smart,
     );
@@ -132,8 +133,8 @@ QUnit.test("ForceFieldEnergy", assert => {
 });
 
 QUnit.test("InvalidAdvanceTimeValue", assert => {
-    assert.throws(() => new Physics([], [], 0), "timeDelta should be positive");
-    assert.throws(() => new Physics([], [], -0.1), "timeDelta should be positive");
+    assert.throws(() => new Physics([], [], [], 0), "timeDelta should be positive");
+    assert.throws(() => new Physics([], [], [], -0.1), "timeDelta should be positive");
 });
 
 QUnit.test("DragAndTorqueMotion", assert => {
@@ -144,7 +145,7 @@ QUnit.test("DragAndTorqueMotion", assert => {
             { getForce: body => new AppliedForce(new Vector(1, 2), body.position.add(new Vector(2, 3))) },
             { getForce: body => new AppliedForce(new Vector(-1, 1), body.position.add(new Vector(2, 2))) },
         ],
-        0.2
+        [], 0.2
     );
 
     physics.advance();
@@ -162,6 +163,7 @@ QUnit.test("PhysicsTotalEnergy", assert => {
             Physics.createFixedSpring(100, new Vector(0, 0), body, new Vector(1, 2)),
             Physics.createGravity(50),
         ],
+        [],
         0.01
     );
     assert.close(physics.totalEnergy(), 1540250);
@@ -224,6 +226,7 @@ QUnit.test("FreeFallAccuracy", assert => {
     let physics = new Physics(
         [body],
         [gravity],
+        [],
         0.01,
         AdvanceMode.Smart
     );
@@ -245,6 +248,7 @@ QUnit.test("SpringPendulumAccuracy", assert => {
     let physics = new Physics(
         [body],
         [spring, gravity],
+        [],
         0.01,
         AdvanceMode.Smart
     );

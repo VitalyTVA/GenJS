@@ -113,18 +113,26 @@ interface ForceProvider {
     energy?(body: Body): number;
 }
 interface ForceField extends ForceProvider {
-    acceleration: Vector;
+    readonly acceleration: Vector;
 }
 interface SpringForceProvider extends ForceProvider {
     //TODO test methods
     from(): Vector;
     to(): Vector;
 }
+interface ConstraintForce {
+    getConstraintForce(body: Body, externalForce: Vector): Vector;
+}
+interface FixedLengthConstraintForce extends ConstraintForce {
+    readonly origin: Vector;
+    readonly length: number;
+}
 
 interface PhysicsSetup {
-    boxes: BoxBody[];
-    forceFields: ForceProvider[];
-    springs: SpringForceProvider[];
+    readonly boxes: BoxBody[];
+    readonly forceFields: ForceProvider[];
+    readonly constraints?: FixedLengthConstraintForce[];
+    readonly springs: SpringForceProvider[];
 }
 enum AdvanceMode {
     Default,
@@ -206,8 +214,9 @@ class Physics {
     readonly forces: Array<ForceProvider>;
     readonly step: number;
     readonly advanceMode: AdvanceMode;
+    readonly constraints: Array<ConstraintForce>;
     stopped: boolean;
-    constructor(bodies: Array<Body>, forces: Array<ForceProvider>, step: number = Physics.defaultStep, advanceMode: AdvanceMode = AdvanceMode.Default) {
+    constructor(bodies: Array<Body>, forces: Array<ForceProvider>, constraints: Array<ConstraintForce>, step: number = Physics.defaultStep, advanceMode: AdvanceMode = AdvanceMode.Default) {
         if (step <= 0)
             throw "timeDelta should be positive";
 
@@ -215,12 +224,17 @@ class Physics {
         this.forces = forces;
         this.step = step;
         this.advanceMode = advanceMode;
+        this.constraints = constraints;
 
         if (this.advanceMode == AdvanceMode.Smart)
             this.advanceVelocities(step / 2);
     }
     static create(setup: PhysicsSetup) {
-        return new Physics(setup.boxes, setup.forceFields.concat(setup.springs), Physics.defaultStep, AdvanceMode.Smart);
+        //TODO always create via PhysicsSetup??
+        let constraints = setup.constraints;
+        if (constraints == undefined)
+            constraints = [];
+        return new Physics(setup.boxes, setup.forceFields.concat(setup.springs), constraints, Physics.defaultStep, AdvanceMode.Default);
     }
 
     readonly positions = () => this.bodies.map(x => x.position);
@@ -263,6 +277,16 @@ class Physics {
                 totalForceY += forceValue.force.y;
                 totalTorque += torque;
             }
+            if (this.constraints.length > 1)
+                throw "TODO";
+            if (this.constraints.length == 1) {
+                if (this.advanceMode == AdvanceMode.Smart)
+                    throw "TODO";
+                let constraintForce = this.constraints[0].getConstraintForce(body, new Vector(totalForceX, totalForceY));
+                totalForceX += constraintForce.x;
+                totalForceY += constraintForce.y;
+            }
+
             var v = body.velocity;
             body.velocity = new Vector(v.x + dt * totalForceX / body.mass, v.y + dt * totalForceY / body.mass);
             body.angularVelocity = body.angularVelocity + dt * totalTorque / body.momenOfInertia;

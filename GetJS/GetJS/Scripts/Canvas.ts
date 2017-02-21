@@ -42,6 +42,16 @@ class View {
             context.stroke();
         });
     }
+    static createFixedLengthConstraint(constraint: FixedLengthConstraintForce): View {
+        return new View(context => {
+            context.strokeStyle = "red";
+            context.beginPath();
+            let f = constraint.origin;
+            let l = constraint.length;
+            context.arc(f.x, f.y, l, 0, Math.PI * 2);
+            context.stroke();
+        });
+    }
     readonly draw: DrawCallback;
     private constructor(draw: DrawCallback, offset?: Vector) {
         this.draw = context => {
@@ -69,7 +79,7 @@ class Simulation {
         const draw = () => objects.forEach(x => x.draw(context));
         const clear = () => {
             context.fillStyle = "black";
-            context.fillRect(0, 0, 1280, 720);
+            context.fillRect(0, 0, 1500, 720);
         };
 
         let gameLoop = (time: number) => {
