@@ -67,16 +67,23 @@ class Simulations {
     static createFixedLengthPendulum(): PhysicsSetup {
         let boxSize = new Vector(40, 40);
         let box = createBox(boxSize, 100, new Vector(0, -200), new Vector(50, 0));
+        let length = box.position.length;
         let constraint: FixedLengthConstraintForce = {
             getConstraintForce: (body, realBodyPosition, externalForce) => {
+                if (box !== body)
+                    throw "Invalid operation";
                 //TODO now works only for constraints with origin in zero
                 let p = realBodyPosition;
                 let v = body.velocity;
                 let lambda = -(externalForce.scalarProduct(p) + body.mass * v.squareLength) / p.squareLength;
                 return p.mult(lambda);
             },
+            getCorrectionForce: realBodyPosition => {
+                let d = realBodyPosition.length - length;
+                return realBodyPosition.negate().setLength(d).mult(box.mass * 1000);
+            },
             origin: new Vector(0, 0),
-            length: box.position.length,
+            length: length,
         };
         return {
             boxes: [box],

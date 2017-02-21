@@ -122,6 +122,7 @@ interface SpringForceProvider extends ForceProvider {
 }
 interface ConstraintForce {
     getConstraintForce(body: Body, realBodyPosition: Vector, externalForce: Vector): Vector;
+    getCorrectionForce(realBodyPosition: Vector): Vector;
 }
 interface FixedLengthConstraintForce extends ConstraintForce {
     readonly origin: Vector;
@@ -285,8 +286,9 @@ class Physics {
                 throw "TODO";
             if (this.constraints.length == 1) {
                 let constraintForce = this.constraints[0].getConstraintForce(body, this.realPositions[i], new Vector(totalForceX, totalForceY));
-                totalForceX += constraintForce.x;
-                totalForceY += constraintForce.y;
+                let correctionForce = this.constraints[0].getCorrectionForce(this.realPositions[i]);
+                totalForceX += constraintForce.x + correctionForce.x;
+                totalForceY += constraintForce.y + correctionForce.y;
             }
 
             var v = body.velocity;

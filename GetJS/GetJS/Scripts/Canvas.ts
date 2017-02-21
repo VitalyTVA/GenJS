@@ -29,6 +29,12 @@ class View {
             context.rotate(box.angle);
             context.fillStyle = "white";
             context.fillRect(-box.size.x / 2, -box.size.y / 2, box.size.x, box.size.y);
+
+            context.fillStyle = "blue";
+            context.beginPath();
+            context.arc(0, 0, 2, 0, Math.PI * 2);
+            context.stroke();
+
         });
     }
     static createSpring(spring: Spring): View {
