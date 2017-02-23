@@ -116,3 +116,21 @@ class Simulation {
         //context.fillRect(0, 0, 1280, 720);
     }
 }
+
+function createSimulation(canvas: HTMLCanvasElement, setups: [PhysicsSetup, Vector][], debug: (debug: string) => void) {
+    let physices = setups.map(([x, o]) => Physics.create(x));
+    let views = setups.map(([x, o]) => View.combine(x.boxes.map(View.createBox).concat(x.springs.map(View.createSpring)), o));
+    let count = 0;
+    return Simulation.createSimulation(
+        canvas,
+        views,
+        () => physices.forEach(x => {
+            x.advance();
+            let res = "";
+            physices.forEach(x => res += Math.round(x.totalEnergy()) + "<br/>");
+            count++;
+            if (count % 20 == 0)
+                debug(res);
+        }),
+        Physics.defaultStep);
+}
