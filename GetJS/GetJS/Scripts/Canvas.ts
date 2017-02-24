@@ -69,7 +69,7 @@ class Simulation {
         const draw = () => objects.forEach(x => x.draw(context));
         const clear = () => {
             context.fillStyle = "black";
-            context.fillRect(0, 0, 1280, 720);
+            context.fillRect(0, 0, canvas.width, canvas.height);
         };
 
         let gameLoop = (time: number) => {
@@ -126,11 +126,13 @@ function createSimulation(canvas: HTMLCanvasElement, setups: [PhysicsSetup, Vect
         views,
         () => physices.forEach(x => {
             x.advance();
-            let res = "";
-            physices.forEach(x => res += Math.round(x.totalEnergy()) + "<br/>");
-            count++;
-            if (count % 20 == 0)
-                debug(res);
+            if (x.forces.every(e => e.energy != undefined)) {
+                let res = "";
+                physices.forEach(x => res += Math.round(x.totalEnergy()) + "<br/>");
+                count++;
+                if (count % 20 == 0)
+                    debug(res);
+            }
         }),
         Physics.defaultStep);
 }

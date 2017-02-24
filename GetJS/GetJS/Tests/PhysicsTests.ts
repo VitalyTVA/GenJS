@@ -187,6 +187,13 @@ QUnit.test("FixedPointSpring", assert => {
     assert.vectorEqual(appliedForce.force, new Vector(-125.9626283, 2.227658));
     assert.vectorEqual(appliedForce.point, new Vector(17.39750855, 12.851489455));
     assert.equal(529.0515397254967, spring.energy(body));
+
+    spring.setRate(30);
+    appliedForce = spring.getForce(body);
+    assert.vectorEqual(appliedForce.force, new Vector(-125.9626283 * 2, 2.227658 * 2));
+    assert.vectorEqual(appliedForce.point, new Vector(17.39750855, 12.851489455));
+    assert.equal(529.0515397254967 * 2, spring.energy(body));
+
 });
 
 QUnit.test("DynamicSpring", assert => {
@@ -216,6 +223,10 @@ QUnit.test("DynamicSpring", assert => {
     assert.vectorEqual(appliedForceBody2.force, new Vector(-733.2255037095349, -153.99364925175052));
     assert.vectorEqual(appliedForceBody2.point, new Vector(54.074736942349546, 22.89219639350685));
     assert.close(spring.energy(body1) + spring.energy(body2), 18711.122776665743);
+
+    spring.setRate(30);
+    appliedForceBody1 = spring.getForce(body1);
+    assert.vectorEqual(appliedForceBody1.force, new Vector(733.2255037095349 * 2, 153.99364925175052 * 2));
 });
 
 QUnit.test("FreeFallAccuracy", assert => {

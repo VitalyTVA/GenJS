@@ -119,12 +119,14 @@ interface SpringForceProvider extends ForceProvider {
     //TODO test methods
     from(): Vector;
     to(): Vector;
+    setRate(rate: number): void;
 }
 
 interface PhysicsSetup {
     boxes: BoxBody[];
     forceFields: ForceProvider[];
     springs: SpringForceProvider[];
+    additionalForces?: ForceProvider[];
 }
 enum AdvanceMode {
     Default,
@@ -168,6 +170,7 @@ class Physics {
             },
             from: spring.from,
             to: spring.to,
+            setRate: spring.setRate,
         };
     }
     static createDynamicSpring(rate: number, fromBody: Body, fromBodyPoint: Vector, toBody: Body, toBodyPoint: Vector): SpringForceProvider {
@@ -192,10 +195,12 @@ class Physics {
             },
             from: spring.from,
             to: spring.to,
+            setRate: spring.setRate,
         }
     }
 
     static createSpring(rate: number, fromWorldPoint: () => Vector, toWorldPoint: () => Vector) {
+        //TODO test
         let getForce = (from: Vector, to: Vector) => {
             let vectorBetween = to.subtract(from);
             let force = vectorBetween.mult(rate);
@@ -206,7 +211,8 @@ class Physics {
             getToForce: () => getForce(toWorldPoint(), fromWorldPoint()),
             energy: () => fromWorldPoint().subtract(toWorldPoint()).squareLength * rate / 2,
             from: fromWorldPoint,
-            to: toWorldPoint, 
+            to: toWorldPoint,
+            setRate: (newRate: number) => rate = newRate,
         }
     }
 
@@ -229,7 +235,11 @@ class Physics {
             this.advanceVelocities(step / 2);
     }
     static create(setup: PhysicsSetup) {
-        return new Physics(setup.boxes, setup.forceFields.concat(setup.springs), Physics.defaultStep, AdvanceMode.Smart);
+        //TODO test
+        let forces = setup.forceFields.concat(setup.springs);
+        if (setup.additionalForces != undefined)
+            forces = forces.concat(setup.additionalForces);
+        return new Physics(setup.boxes, forces, Physics.defaultStep, AdvanceMode.Smart);
     }
 
     readonly positions = () => this.bodies.map(x => x.position);
