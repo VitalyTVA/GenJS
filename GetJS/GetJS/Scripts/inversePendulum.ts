@@ -56,13 +56,26 @@ function createForceInversePendulum() {
     let box = createBox(boxSize, 100, new Vector(0, -boxSize.y / 2), new Vector(0, 0), 0);
     let distance = 400;
     let rate = 200;
-    let support = createSupprtSpring(2000, box, new Vector(0, boxSize.y / 2));
+    let support = createSupprtSpring(1000, box, new Vector(0, boxSize.y / 2));
     let offset = new Vector(400, 400);
 
     let forceValue = 0;
     let force: ForceProvider = {
         getForce: (b: Body) => {
             return new AppliedForce(new Vector(forceValue, 0), new Vector(0, boxSize.y / 2));
+        },
+    };
+    let lastY: number;
+    let dampForce: ForceProvider = {
+        getForce: (b: Body) => {
+            let newY = BodyTraits.toWorldPoint(b, new Vector(0, boxSize.y / 2)).y;
+            if (lastY == undefined) {
+                lastY = newY;
+                return null;
+            }
+            let f = (lastY - newY) * 10000;
+            lastY = newY;
+            return new AppliedForce(new Vector(0, f), new Vector(0, boxSize.y / 2));
         },
     };
 
@@ -75,7 +88,7 @@ function createForceInversePendulum() {
                     boxes: [box],
                     forceFields: [Physics.createGravity(100)],
                     springs: [support],
-                    additionalForces: [force],
+                    additionalForces: [force, dampForce],
                 },
                 offset
             ],
