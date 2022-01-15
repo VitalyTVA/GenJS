@@ -1,4 +1,4 @@
-function createSupprtSpring(rate: number, body: Body, bodyPoint: Vector): SpringForceProvider {
+function createSupprtSpring(rate: number, body: RigidBody, bodyPoint: Vector): SpringForceProvider {
     let spring = Physics.createSpring(
         rate,
         () => new Vector(BodyTraits.toWorldPoint(body, bodyPoint).x, 0),
@@ -61,13 +61,13 @@ function createForceInversePendulum() {
 
     let forceValue = 0;
     let force: ForceProvider = {
-        getForce: (b: Body) => {
+        getForce: (b: RigidBody) => {
             return new AppliedForce(new Vector(forceValue, 0), new Vector(0, boxSize.y / 2));
         },
     };
     let lastY: number;
     let dampForce: ForceProvider = {
-        getForce: (b: Body) => {
+        getForce: (b: RigidBody) => {
             let newY = BodyTraits.toWorldPoint(b, new Vector(0, boxSize.y / 2)).y;
             if (lastY == undefined) {
                 lastY = newY;

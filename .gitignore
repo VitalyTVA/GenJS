@@ -1,9 +1,12 @@
 .vs/
+.cr/
+**/[Pp]ackages/*
 bin/
 obj/
 # Logs
 logs
 *.log
+*.user
 npm-debug.log*
 
 # Runtime data

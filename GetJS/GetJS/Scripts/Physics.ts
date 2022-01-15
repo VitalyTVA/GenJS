@@ -70,7 +70,7 @@ class AppliedForce {
     }
 }
 
-interface Body {
+interface RigidBody {
     readonly mass: number;
     position: Vector;
     velocity: Vector;
@@ -79,7 +79,7 @@ interface Body {
     angle: number;
     angularVelocity: number;
 }
-interface BoxBody extends Body {
+interface BoxBody extends RigidBody {
     readonly size: Vector;
 }
 
@@ -99,18 +99,18 @@ function createBox(size: Vector, mass: number, position: Vector, velocity: Vecto
 
 
 class BodyTraits {
-    static toWorldPoint(body: Body, bodyPoint: Vector) {
+    static toWorldPoint(body: RigidBody, bodyPoint: Vector) {
         const rotatedBodyPoint = bodyPoint.rotate(body.angle);
         return body.position.add(rotatedBodyPoint);
     }
-    static energy(body: Body) {
+    static energy(body: RigidBody) {
         return (body.velocity.squareLength * body.mass + body.angularVelocity * body.angularVelocity * body.momenOfInertia) / 2
     }
 }
 
 interface ForceProvider {
-    getForce(body: Body): AppliedForce;
-    energy?(body: Body): number;
+    getForce(body: RigidBody): AppliedForce;
+    energy?(body: RigidBody): number;
 }
 interface ForceField extends ForceProvider {
     acceleration: Vector;
@@ -152,7 +152,7 @@ class Physics {
     static createGravity(g: number): ForceField {
         return Physics.createForceField(new Vector(0, g));
     } 
-    static createFixedSpring(rate: number, fixedPoint: Vector, body: Body, bodyPoint: Vector): SpringForceProvider {
+    static createFixedSpring(rate: number, fixedPoint: Vector, body: RigidBody, bodyPoint: Vector): SpringForceProvider {
         let spring = Physics.createSpring(
             rate,
             () => fixedPoint,
@@ -173,7 +173,7 @@ class Physics {
             setRate: spring.setRate,
         };
     }
-    static createDynamicSpring(rate: number, fromBody: Body, fromBodyPoint: Vector, toBody: Body, toBodyPoint: Vector): SpringForceProvider {
+    static createDynamicSpring(rate: number, fromBody: RigidBody, fromBodyPoint: Vector, toBody: RigidBody, toBodyPoint: Vector): SpringForceProvider {
         let spring = Physics.createSpring(
             rate,
             () => BodyTraits.toWorldPoint(fromBody, fromBodyPoint),
@@ -217,12 +217,12 @@ class Physics {
     }
 
 
-    readonly bodies: Array<Body>;
+    readonly bodies: Array<RigidBody>;
     readonly forces: Array<ForceProvider>;
     readonly step: number;
     readonly advanceMode: AdvanceMode;
     stopped: boolean;
-    constructor(bodies: Array<Body>, forces: Array<ForceProvider>, step: number = Physics.defaultStep, advanceMode: AdvanceMode = AdvanceMode.Default) {
+    constructor(bodies: Array<RigidBody>, forces: Array<ForceProvider>, step: number = Physics.defaultStep, advanceMode: AdvanceMode = AdvanceMode.Default) {
         if (step <= 0)
             throw "timeDelta should be positive";
 
